@@ -27,14 +27,18 @@ uv run titanic-train --config logreg --cv-repeats 1
 
 # tests (no Kaggle data needed)
 uv run pytest
+
+# serve the model
+uv run uvicorn --app-dir api app.main:app --port 8002   # docs at /docs
 ```
 
 The data path can be overridden with `TITANIC_RAW_DIR`.
 
-A uv workspace with one member, `model/`, which builds the `titanic-model`
-package; `api/` will join it later. The package version has a single source of
-truth in `titanic_model/__init__.py` — hatch reads it, and the manifest and
-artifact filename use the same value.
+A uv workspace with two members: `model/` builds `titanic-model` (the pipeline
+and the training run), `api/` builds `titanic-api` (a FastAPI service over it).
+One lock file covers both, so they cannot drift apart on a shared dependency.
+The model version has a single source of truth in `titanic_model/__init__.py` —
+hatch reads it, and the manifest and artifact filename use the same value.
 
 ---
 
@@ -276,9 +280,51 @@ on out-of-fold predictions and has nothing to memorise.
 
 ---
 
+## Serving
+
+Inference lives in `titanic_model/predict.py`, not in the service: `api/app/` is
+transport only. Anything that runs the model — a batch job, a notebook, a second
+service — goes through `make_prediction` and gets the same type frontier.
+
+```
+GET  /api/v1/health    versions and the deployed CV accuracy
+POST /api/v1/predict   {"inputs": [passenger, ...]} -> labels + P(survived)
+```
+
+```bash
+curl -s localhost:8002/api/v1/predict -H 'content-type: application/json' -d '{"inputs":[
+  {"Pclass":1,"Name":"Cumings, Mrs. John Bradley","Sex":"female","Age":38,
+   "SibSp":1,"Parch":0,"Ticket":"PC 17599","Fare":71.2833,"Cabin":"C85","Embarked":"C"},
+  {"Pclass":3,"Name":"Braund, Mr. Owen Harris","Sex":"male","Age":22,
+   "SibSp":1,"Parch":0,"Ticket":"A/5 21171","Fare":7.25}
+]}'
+# {"predictions":[1,0],"probabilities":[0.832061,0.124584],"model_version":"0.1.0.dev0"}
+```
+
+**Field names are the Kaggle ones**, so a row of `test.csv` posts unchanged;
+the lowercase names the model uses are accepted too. Five fields are required —
+`Pclass`, `Name`, `Sex`, `SibSp`, `Parch`. The first four of those have no
+imputer downstream. `Name` is a policy choice: it survives a `null`, but the
+title degrades to a category absent from training and the probability moves by
+about 0.17, so the service refuses rather than answering out of distribution.
+`Age`, `Fare`, `Ticket`, `Cabin` and `Embarked` may be omitted.
+
+**Startup is fail-fast.** The service loads the artifact once in the lifespan
+hook and refuses to come up if the manifest's sklearn version differs from the
+runtime, if the artifact version differs from the package, or if a smoke
+prediction on a known passenger comes out implausible. The alternative —
+unpickling into a different sklearn and serving quietly wrong numbers — is
+worse than not starting.
+
+Client mistakes return 422, never 500: pydantic rejects an unknown `Pclass`, a
+negative fare or an age of 200, and `make_prediction`'s `ValueError` is mapped
+to the same code.
+
+---
+
 ## Tests
 
-`uv run pytest` — 142 tests, about 11 seconds, no Kaggle data required.
+`uv run pytest` — 202 tests, about 13 seconds, no Kaggle data required.
 
 The competition files cannot be redistributed, so `conftest.py` generates a
 frame with the same schema, the same missingness and a sex-driven target.
@@ -297,6 +343,8 @@ What the suite is actually pinning down:
 | `test_builders` | two pipelines sharing one scaler; a config key that no longer names a slot; a stack member forked across processes with an MLX context |
 | `test_mlx` | base-class order making `roc_auc` return NaN instead of raising; an unseeded fit |
 | `test_train` | a local path in the manifest; the quality gate writing artifacts anyway |
+| `test_predict` | an all-missing text column inferred as float64; a required field silently imputed |
+| `api/…` | a schema that drifts from the artifact; version skew starting anyway; a 500 where 422 belongs |
 
 Warnings are errors (`filterwarnings = ["error", ...]`) with two documented
 exceptions from pinned dependencies.
@@ -318,7 +366,16 @@ model/
     mlx_mlp.py       MLX network + sklearn wrapper
     builders.py      frozen configs, build(), build_stack()
     train.py         training, metrics, artifacts
-  tests/             142 tests on synthetic Titanic-shaped data
+    predict.py       artifact loading, type frontier, make_prediction
+  tests/             tests on synthetic Titanic-shaped data
+api/
+  pyproject.toml     the titanic-api package
+  app/
+    main.py          create_app, lifespan
+    api.py           /health and /predict
+    schemas/         the wire contract
+    model_loader.py  fail-fast startup checks
+    tests/
 workbook/            out of git: notebooks, data, experiment notes, search runs
 ```
 

@@ -33,3 +33,6 @@ model_artifacts/*
 
 ### Submissions
 submission*.csv
+
+### Editor tooling
+.claude/
