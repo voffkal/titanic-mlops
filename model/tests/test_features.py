@@ -49,6 +49,12 @@ class TestTitleFeature:
         assert "name" in out.columns
         assert "title" not in df.columns  # transform must not mutate its input
 
+    @pytest.mark.parametrize("dtype", ["object", "float64"])
+    def test_all_missing_column_falls_back(self, dtype):
+        """An empty text column arrives as float64 and .str refuses it."""
+        df = pd.DataFrame({"name": pd.Series([None], dtype=dtype)})
+        assert TitleFeature().fit_transform(df)["title"].tolist() == ["Empty"]
+
 
 class TestAgeFeatures:
     def frame(self):
@@ -131,6 +137,18 @@ class TestCabinCatFeature:
         df = pd.DataFrame({"cabin": ["C85", None]})
         out = CabinCatFeature(add_side=False).fit_transform(df)
         assert out["cabin_cat"].tolist() == ["C", "Missing"]
+
+    @pytest.mark.parametrize("dtype", ["object", "float64"])
+    def test_all_missing_column(self, dtype):
+        """A single-passenger request without a cabin: feature_engine's imputers
+        downcast the empty column to float64 and .str refuses a float column."""
+        df = pd.DataFrame({"cabin": pd.Series([None], dtype=dtype)})
+        assert CabinCatFeature().fit_transform(df)["cabin_cat"].tolist() == ["Missing"]
+
+    def test_output_dtype_is_object(self):
+        """The encoders downstream were fitted against object, not StringDtype."""
+        out = CabinCatFeature().fit_transform(pd.DataFrame({"cabin": ["C85", None]}))
+        assert out["cabin_cat"].dtype == object
 
 
 def test_family_features():

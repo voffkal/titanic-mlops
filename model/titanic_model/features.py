@@ -88,7 +88,8 @@ class TitleFeature(BaseEstimator, TransformerMixin):
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         X = X.copy()
-        raw_title = X["name"].str.extract(r",\s*([^\.]+)\.")[0]
+        # astype: a batch where the column is entirely missing arrives as float64
+        raw_title = X["name"].astype("string").str.extract(r",\s*([^\.]+)\.")[0]
         raw_title = raw_title.str.replace(r"^the\s+", "", regex=True).str.strip()  # "the Countess"
         X["title"] = raw_title.map(self._resolved_map()).fillna(self.fallback)
         return X
@@ -177,15 +178,19 @@ class CabinCatFeature(BaseEstimator, TransformerMixin):
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         X = X.copy()
-        deck = X["cabin"].str[0]
+        # astype: a single-passenger request without a cabin arrives as float64
+        # (feature_engine's imputers downcast an all-missing object column) and
+        # .str refuses a float column
+        cabin = X["cabin"].astype("string")
+        deck = cabin.str[0]
 
         if self.add_side:
-            num = X["cabin"].str.extract(r"(\d+)", expand=False).astype("float")
+            num = cabin.str.extract(r"(\d+)", expand=False).astype("float")
             # cabin number parity = side of the ship
             side = np.where(num.isna(), "na", np.where(num % 2 == 0, "even", "odd"))
-            X["cabin_cat"] = (deck + "_" + side).fillna(self.fill_value)
+            X["cabin_cat"] = (deck + "_" + side).fillna(self.fill_value).astype(object)
         else:
-            X["cabin_cat"] = deck.fillna(self.fill_value)
+            X["cabin_cat"] = deck.fillna(self.fill_value).astype(object)
 
         return X
 
