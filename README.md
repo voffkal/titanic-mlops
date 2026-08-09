@@ -322,6 +322,67 @@ to the same code.
 
 ---
 
+## Container
+
+```bash
+make serve    # trains if needed, builds, runs on http://localhost:8002/docs
+make stop
+```
+
+Two stages: `uv sync --locked --no-dev --no-editable` builds a `.venv` of wheels,
+the runtime image copies only that plus `model_artifacts/`, so no sources ship.
+`WORKDIR` is identical in both stages because uv bakes an absolute path into the
+console-script shebangs. Image 1.3 GB, of which the artifact is 762 KB — the rest
+is the scientific stack.
+
+Two native dependencies have to be present or the artifact will not unpickle:
+
+* **libgomp1** — the OpenMP runtime xgboost links at import;
+* **mlx-cpu** — on Linux the `mlx` wheel is bindings only, and `libmlx.so` lives
+  in the `cpu` extra. Missing it fails with `libmlx.so: cannot open shared object
+  file` at import, long before any request. Hence `mlx[cpu]` in the dependencies:
+  the extra is a no-op on macOS, where `mlx-metal` arrives anyway.
+
+**The backend changes the numbers slightly.** The released artifact is trained on
+Metal, and the container runs MLX on CPU. Across all 418 test passengers:
+
+| | |
+|---|---|
+| largest probability shift | 1.27e-4 |
+| median shift | 3.15e-5 |
+| labels that differ | 0 of 418 |
+| closest probability to the 0.5 threshold | 0.0014, i.e. 11× the largest shift |
+
+Float32 addition order differs between the two backends. It has never flipped a
+label here, but the margin is 11×, not 1000×, so a passenger sitting exactly on
+the threshold could in principle land differently. Only the MLX member is
+affected; the other five are float64 sklearn estimators.
+
+---
+
+## CI
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | push to main, PR | ruff, the full suite, then builds the image and probes `/health` and `/predict` in a running container |
+| `release-model.yml` | tag `model-v*` | fetches the competition data, runs the gate, trains, publishes a release with the artifact, schema and manifest |
+| `docker.yml` | tag `api-v*` | takes the artifact from the newest `model-v*` release, builds linux/amd64 + linux/arm64, pushes to ghcr |
+
+**`ci.yml` needs no secret and downloads no data** — that is the payoff of the
+synthetic fixtures. The image job trains a throwaway model on generated data
+purely so the container has something to load: it proves the native stack
+imports on Linux, which is the failure mode that actually happens, and says
+nothing about model quality.
+
+Only `release-model.yml` needs `KAGGLE_ACCESS_TOKEN`, because only it trains the
+real thing. The quality gate inside `train()` runs there too, so a pipeline that
+regressed below 0.78 CV accuracy fails the release instead of shipping.
+
+Both architectures are buildable because mlx publishes `manylinux_2_35` wheels
+for x86_64 and aarch64, and the base image is bookworm (glibc 2.36).
+
+---
+
 ## Tests
 
 `uv run pytest` — 202 tests, about 13 seconds, no Kaggle data required.
@@ -356,6 +417,10 @@ exceptions from pinned dependencies.
 ```
 pyproject.toml       uv workspace root, ruff and pytest config
 uv.lock              pinned resolution
+Makefile             train, metrics, image, serve
+Dockerfile           two-stage build of the api image
+compose.yaml         local run with a healthcheck
+.github/workflows/   ci, release-model, docker
 LICENSE              MIT
 model/
   pyproject.toml     the titanic-model package
