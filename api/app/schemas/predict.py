@@ -5,9 +5,18 @@ Ten fields are hand-written rather than generated: ``test_schemas.py`` asserts
 they still match the artifact's schema, which catches drift without a codegen step.
 """
 
+import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+#: "Braund, Mr. Owen Harris" — the title between the comma and the period is the
+#: feature; all 1309 names in the two official files match this.
+TITLE_PATTERN = re.compile(r",\s*[^.]+\.")
+
+#: Decks present in the data. There is no deck N, so "NaN" as a string must not
+#: quietly become one.
+DECKS = frozenset("ABCDEFGT")
 
 
 class Passenger(BaseModel):
@@ -26,6 +35,31 @@ class Passenger(BaseModel):
     fare: float | None = Field(None, alias="Fare", ge=0)
     cabin: str | None = Field(None, alias="Cabin")
     embarked: str | None = Field(None, alias="Embarked")
+
+    @field_validator("name")
+    @classmethod
+    def name_must_carry_a_title(cls, value: str) -> str:
+        if not TITLE_PATTERN.search(value):
+            raise ValueError(
+                "expected the Kaggle format 'Surname, Title. Given names' — the title "
+                "is a feature, and without one the model predicts out of distribution"
+            )
+        return value
+
+    @field_validator("cabin", "ticket", "embarked")
+    @classmethod
+    def blank_means_absent(cls, value: str | None) -> str | None:
+        return value.strip() or None if value else None
+
+    @field_validator("cabin")
+    @classmethod
+    def cabin_must_name_a_deck(cls, value: str | None) -> str | None:
+        if value is not None and value[0].upper() not in DECKS:
+            raise ValueError(
+                f"cabin must start with a deck letter ({''.join(sorted(DECKS))}); "
+                f"omit the field or send null when it is unknown"
+            )
+        return value
 
 
 class MultiplePassengers(BaseModel):

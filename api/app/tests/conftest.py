@@ -14,7 +14,9 @@ from titanic_model.train import train
 MODEL_TESTS = Path(__file__).resolve().parents[3] / "model" / "tests"
 sys.path.insert(0, str(MODEL_TESTS))  # reuse the synthetic Kaggle-shaped generator
 
-from conftest import write_raw_dir  # noqa: E402
+from conftest import requires_kaggle_data, write_raw_dir  # noqa: E402
+
+__all__ = ["SAMPLE", "requires_kaggle_data"]
 
 SAMPLE = json.loads(
     (Path(__file__).resolve().parents[1] / "resources" / "sample_payload.json").read_text()
