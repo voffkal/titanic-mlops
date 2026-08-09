@@ -1,0 +1,77 @@
+name: release-model
+
+on:
+  push:
+    tags: ["model-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  train-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      # Kaggle rules: the data is not redistributed, every run fetches it.
+      # Only this workflow needs it — the test suite does not.
+      - name: Restore dataset cache
+        id: data-cache
+        uses: actions/cache@v4
+        with:
+          path: workbook/data/raw
+          key: kaggle-titanic-v1
+
+      - name: Fetch the competition data
+        if: steps.data-cache.outputs.cache-hit != 'true'
+        env:
+          KAGGLE_ACCESS_TOKEN: ${{ secrets.KAGGLE_ACCESS_TOKEN }}
+        run: |
+          mkdir -p ~/.kaggle
+          printf '%s' "$KAGGLE_ACCESS_TOKEN" > ~/.kaggle/access_token
+          chmod 600 ~/.kaggle/access_token
+          mkdir -p workbook/data/raw
+          uvx --from kaggle kaggle competitions download -c titanic -p workbook/data
+          unzip -o workbook/data/titanic.zip -d workbook/data/raw
+
+      - name: Gate
+        run: |
+          uv sync --locked
+          uv run ruff check .
+          uv run pytest
+
+      # The quality gate inside train() refuses to write artifacts below 0.78 CV
+      # accuracy, so a broken pipeline fails the release here rather than shipping.
+      - name: Train the release artifact
+        run: uv run titanic-train
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES=$(uv run python - <<'PY'
+          import json
+          m = json.load(open("model_artifacts/metrics.json"))
+          cv, base = m["metrics"]["cv"], m["baseline"]
+          print(
+              f"{m['config']} ({', '.join(m['stack_members'] or [])})\n\n"
+              f"CV accuracy {cv['accuracy_mean']:.4f} ± {cv['accuracy_std']:.4f} "
+              f"over {cv['n_folds']} folds | roc_auc {cv['roc_auc_mean']:.4f}\n"
+              f"OOF accuracy {m['metrics']['oof']['accuracy']:.4f} | "
+              f"train-CV gap {m['metrics']['train_cv_gap']:+.4f}\n"
+              f"lift over the sex rule {base['cv_lift']:+.4f}\n\n"
+              f"sklearn {m['libraries']['scikit-learn']}, xgboost {m['libraries']['xgboost']}, "
+              f"mlx {m['libraries']['mlx']} (CPU backend on CI; a Metal run moves "
+              f"probabilities by ~1e-4 and no label on the 418 test rows)"
+          )
+          PY
+          )
+          gh release create "$GITHUB_REF_NAME" \
+            model_artifacts/titanic_model-*.joblib \
+            model_artifacts/input_schema.json \
+            model_artifacts/metrics.json \
+            --title "$GITHUB_REF_NAME" --notes "$NOTES"

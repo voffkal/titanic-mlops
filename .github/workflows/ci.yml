@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Lint
+        run: |
+          uv sync --locked
+          uv run ruff check .
+
+      # No Kaggle secret and no dataset download: the suite generates its own
+      # Kaggle-shaped data. The handful of tests that need the real files skip.
+      - name: Tests
+        run: uv run pytest
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      # The image is only worth building if the native stack imports on Linux:
+      # xgboost needs libgomp1 and mlx needs libmlx.so out of mlx-cpu. A model
+      # trained on synthetic data is enough to prove that, and needs no secret.
+      - name: Train a throwaway artifact
+        run: |
+          uv sync --locked
+          uv run python -c "
+          import sys, tempfile, pathlib
+          sys.path.insert(0, 'model/tests')
+          from conftest import write_raw_dir
+          from titanic_model.train import train
+          raw = write_raw_dir(pathlib.Path(tempfile.mkdtemp()))
+          train(config='logreg', artifacts_dir=pathlib.Path('model_artifacts'),
+                raw_dir=raw, cv_repeats=1)
+          "
+
+      - name: Build
+        run: docker build -t titanic-api:ci .
+
+      - name: Start and probe
+        run: |
+          docker run -d --name api -p 8002:8002 titanic-api:ci
+          for i in $(seq 1 30); do
+            curl -fs localhost:8002/api/v1/health && break || sleep 2
+          done
+          curl -fs localhost:8002/api/v1/health | tee /dev/stderr | grep -q '"status":"ok"'
+          curl -fs -X POST localhost:8002/api/v1/predict \
+            -H 'content-type: application/json' \
+            -d '{"inputs":[{"Pclass":1,"Name":"Cumings, Mrs. John Bradley","Sex":"female","Age":38,"SibSp":1,"Parch":0,"Fare":71.28,"Cabin":"C85","Embarked":"C"}]}' \
+            | tee /dev/stderr | grep -q '"probabilities"'
+
+      - name: Logs on failure
+        if: failure()
+        run: docker logs api
