@@ -30,6 +30,19 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 # one-key-per-line and legitimately run long.
 ignore = ["E501"]
 
+[tool.ruff.lint.isort]
+# the package is installed into .venv, so without this it is sorted as third-party
+known-first-party = ["titanic_model"]
+known-local-folder = ["conftest"]
+
 [tool.pytest.ini_options]
 testpaths = ["model/tests"]
 addopts = "-q"
+# A warning is a failure by default: a blanket ignore once hid 80% of the
+# candidates in a hyperparameter search. The two exceptions below are raised
+# inside pinned dependencies and nothing in this repository can act on them.
+filterwarnings = [
+    "error",
+    "ignore:'future.no_silent_downcasting' is deprecated",       # feature_engine
+    "ignore:Setting the shape on a NumPy array has been deprecated",  # joblib
+]

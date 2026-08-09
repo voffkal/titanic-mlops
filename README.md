@@ -24,6 +24,9 @@ uv run titanic-train --submission
 
 # single model, quick run
 uv run titanic-train --config logreg --cv-repeats 1
+
+# tests (no Kaggle data needed)
+uv run pytest
 ```
 
 The data path can be overridden with `TITANIC_RAW_DIR`.
@@ -273,6 +276,33 @@ on out-of-fold predictions and has nothing to memorise.
 
 ---
 
+## Tests
+
+`uv run pytest` — 142 tests, about 11 seconds, no Kaggle data required.
+
+The competition files cannot be redistributed, so `conftest.py` generates a
+frame with the same schema, the same missingness and a sex-driven target.
+`write_raw_dir` produces a Kaggle-shaped 891/418 pair, which lets `train()` run
+end to end in a temporary directory — artifacts, manifest, submission and the
+quality gate included. A handful of tests do use the real files and skip
+themselves when those are absent.
+
+What the suite is actually pinning down:
+
+| Area | What would otherwise break silently |
+|---|---|
+| `test_data` | wrong row count or a missing column accepted as the official file; a submission Kaggle rejects |
+| `test_features` | age imputed from the global median; test-set quantiles recomputed on transform; `clone` losing a custom title map |
+| `test_pipeline` | the `poly` slot emitting four columns twice; `ZERO` built from lambdas, which fails only at `joblib.dump`; steps reordered so age is imputed before titles exist |
+| `test_builders` | two pipelines sharing one scaler; a config key that no longer names a slot; a stack member forked across processes with an MLX context |
+| `test_mlx` | base-class order making `roc_auc` return NaN instead of raising; an unseeded fit |
+| `test_train` | a local path in the manifest; the quality gate writing artifacts anyway |
+
+Warnings are errors (`filterwarnings = ["error", ...]`) with two documented
+exceptions from pinned dependencies.
+
+---
+
 ## Layout
 
 ```
@@ -288,7 +318,7 @@ model/
     mlx_mlp.py       MLX network + sklearn wrapper
     builders.py      frozen configs, build(), build_stack()
     train.py         training, metrics, artifacts
-  tests/
+  tests/             142 tests on synthetic Titanic-shaped data
 workbook/            out of git: notebooks, data, experiment notes, search runs
 ```
 
