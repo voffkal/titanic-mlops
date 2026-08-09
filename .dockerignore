@@ -1,0 +1,11 @@
+.git
+.github
+.venv
+.claude
+.ruff_cache
+.pytest_cache
+**/__pycache__
+dist
+workbook
+README.md
+model_artifacts/submission.csv
