@@ -1,0 +1,12 @@
+{
+  "Pclass": 1,
+  "Name": "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
+  "Sex": "female",
+  "Age": 38.0,
+  "SibSp": 1,
+  "Parch": 0,
+  "Ticket": "PC 17599",
+  "Fare": 71.2833,
+  "Cabin": "C85",
+  "Embarked": "C"
+}

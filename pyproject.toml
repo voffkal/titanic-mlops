@@ -3,19 +3,24 @@ name = "titanic-mlops"
 version = "0.0.0"
 description = "Kaggle Titanic: slot-based pipeline, frozen model configs, reproducible artifact"
 requires-python = ">=3.11"
-dependencies = ["titanic-model"]
+dependencies = ["titanic-model", "titanic-api"]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["model"]
+members = ["model", "api"]
 
 [tool.uv.sources]
 titanic-model = { workspace = true }
+titanic-api = { workspace = true }
 
 [dependency-groups]
-dev = ["pytest>=8.2", "ruff>=0.5"]
+dev = [
+    "pytest>=8.2",
+    "ruff>=0.5",
+    "httpx2>=2.10.0",   # starlette's TestClient; plain httpx is deprecated there
+]
 
 [tool.ruff]
 line-length = 100
@@ -32,11 +37,11 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 # the package is installed into .venv, so without this it is sorted as third-party
-known-first-party = ["titanic_model"]
+known-first-party = ["titanic_model", "app"]
 known-local-folder = ["conftest"]
 
 [tool.pytest.ini_options]
-testpaths = ["model/tests"]
+testpaths = ["model/tests", "api/app/tests"]
 addopts = "-q"
 # A warning is a failure by default: a blanket ignore once hid 80% of the
 # candidates in a hyperparameter search. The two exceptions below are raised
