@@ -155,6 +155,7 @@ class MLXClassifier(ClassifierMixin, BaseEstimator):  # base order matters: othe
     def fit(self, X, y) -> MLXClassifier:
         y = np.asarray(y)
         self.classes_ = np.unique(y)
+        y = np.searchsorted(self.classes_, y)  # to 0..k-1; predict maps back via classes_
         X = np.asarray(X, dtype=np.float32)
 
         X_tr, X_va, y_tr, y_va = train_test_split(
