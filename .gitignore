@@ -1,0 +1,35 @@
+### macOS
+.DS_Store
+
+### Research kitchen — entirely out of the repository
+# Holds notebooks with stored outputs (13 MB of base64 images in one of them),
+# competition data, experiment notes, legacy datasets, search runs.
+# Data also stays out by Kaggle rules: everyone downloads it themselves.
+# See workbook/data/README.md; code looks under workbook/data/raw, overridable
+# with TITANIC_RAW_DIR.
+workbook/
+
+### Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+### Model artifacts
+# Weights and fitted pipelines ship via GitHub Releases: binaries bloat git
+# history irreversibly. The metrics manifest is the opposite — it belongs in
+# the repo, hence the exception.
+model_artifacts/*
+!model_artifacts/metrics.json
+!model_artifacts/input_schema.json
+*.joblib
+*.safetensors
+*.npz
+
+### Submissions
+submission*.csv

@@ -1,0 +1,35 @@
+[project]
+name = "titanic-mlops"
+version = "0.0.0"
+description = "Kaggle Titanic: slot-based pipeline, frozen model configs, reproducible artifact"
+requires-python = ">=3.11"
+dependencies = ["titanic-model"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["model"]
+
+[tool.uv.sources]
+titanic-model = { workspace = true }
+
+[dependency-groups]
+dev = ["pytest>=8.2", "ruff>=0.5"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# workbook/ is research material out of the repository: notebooks with stored
+# outputs and legacy scripts. Linting it produces noise, not signal.
+extend-exclude = ["workbook"]   # extend-, not exclude=: keeps ruff defaults such as .venv
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+# E501 is covered by the formatter; frozen configs in builders.py are generated
+# one-key-per-line and legitimately run long.
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["model/tests"]
+addopts = "-q"

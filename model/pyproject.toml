@@ -1,0 +1,39 @@
+[project]
+name = "titanic-model"
+dynamic = ["version"]
+description = "Titanic survival classification: slot pipeline + 6-model stack, packaged for deployment"
+license = "MIT"
+authors = [{ name = "Voffkal" }]
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    # >=1.6: the estimator type comes from __sklearn_tags__, which MLXClassifier
+    # relies on. Upper bound because sklearn moves preprocessing APIs across minors.
+    "scikit-learn>=1.6,<1.8",
+    "scipy>=1.13",
+    "feature-engine>=1.9",
+    "imbalanced-learn>=0.13",
+    # Needed at RUNTIME, not just for training: the frozen configs unpickle
+    # CatBoostEncoder / HelmertEncoder / XGBClassifier / MLXClassifier when the
+    # artifact is loaded.
+    "category-encoders>=2.6",
+    "xgboost>=2.1",
+    "mlx>=0.29",
+    "joblib>=1.4",
+]
+
+[project.scripts]
+titanic-train = "titanic_model.train:main"
+
+# single source of truth for the version: titanic_model/__init__.py, which is
+# what the manifest and the artifact filename use
+[tool.hatch.version]
+path = "titanic_model/__init__.py"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["titanic_model"]
