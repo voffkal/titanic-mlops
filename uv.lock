@@ -300,6 +300,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/26/f9efe51f7f32afc7da95fc832cc3e2744f9284b846e0e18ebd98b6bd2458/mlx-0.32.0-cp314-cp314-win_arm64.whl", hash = "sha256:13f793c354ea9dc589bbd113f4b7d299900fb440199bbb403546845852b2499b", size = 558174, upload-time = "2026-07-07T17:56:13.694Z" },
 ]
 
+[package.optional-dependencies]
+cpu = [
+    { name = "mlx-cpu", marker = "sys_platform == 'linux'" },
+]
+
+[[package]]
+name = "mlx-cpu"
+version = "0.32.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/f7/5d9b53ad219d2ed31f66a103eba097e07a77bb5b0b0ea4dbfb12a8bfd224/mlx_cpu-0.32.0-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:b23f19d34073445b32a724358ba21bfb114a84021c9507be700479a191a9ae08", size = 8792264, upload-time = "2026-07-07T17:55:12.942Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/02/16c07a41e382312d6b86f1df5ee2975246b94f88a289c0468a9d9a5cd368/mlx_cpu-0.32.0-py3-none-manylinux_2_35_x86_64.whl", hash = "sha256:d5052fa8e1cbc135cc4b6fc09745f9a57a2cbd1b4def17449e965ef263239d75", size = 10370672, upload-time = "2026-07-07T17:55:15.263Z" },
+]
+
 [[package]]
 name = "mlx-metal"
 version = "0.32.0"
@@ -1152,7 +1166,7 @@ dependencies = [
     { name = "feature-engine" },
     { name = "imbalanced-learn" },
     { name = "joblib" },
-    { name = "mlx" },
+    { name = "mlx", extra = ["cpu"] },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pandas" },
@@ -1169,7 +1183,7 @@ requires-dist = [
     { name = "feature-engine", specifier = ">=1.9" },
     { name = "imbalanced-learn", specifier = ">=0.13" },
     { name = "joblib", specifier = ">=1.4" },
-    { name = "mlx", specifier = ">=0.29" },
+    { name = "mlx", extras = ["cpu"], specifier = ">=0.29" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "scikit-learn", specifier = ">=1.6,<1.8" },

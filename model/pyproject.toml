@@ -19,7 +19,10 @@ dependencies = [
     # artifact is loaded.
     "category-encoders>=2.6",
     "xgboost>=2.1",
-    "mlx>=0.29",
+    # mlx[cpu]: on Linux the base package ships only the bindings and libmlx.so
+    # lives in mlx-cpu, so the container fails to import without the extra. On
+    # macOS the extra resolves to nothing and mlx-metal comes in as usual.
+    "mlx[cpu]>=0.29",
     "joblib>=1.4",
 ]
 
