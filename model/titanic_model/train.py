@@ -43,7 +43,8 @@ from . import __version__
 from .builders import MODELS, STACK_MEMBERS, build, build_stack
 from .data import DEFAULT_RAW_DIR, load_test, load_train, write_submission
 
-DEFAULT_ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "model_artifacts"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_ARTIFACTS_DIR = PROJECT_ROOT / "model_artifacts"
 
 #: Quality gate: below this no artifacts are written. Reference point is the
 #: sex rule (LB 0.76555).
@@ -53,7 +54,10 @@ MIN_CV_ACCURACY = 0.78
 def _git_commit() -> str:
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], text=True, stderr=subprocess.DEVNULL
+            ["git", "rev-parse", "--short", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            cwd=PROJECT_ROOT,  # not the caller's cwd: that could be another repo
         ).strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "unknown"
@@ -68,9 +72,8 @@ def _dataset_hash(X: pd.DataFrame, y: pd.Series) -> str:
 
 def _relative_source(raw_dir: Path) -> str:
     """Path relative to the project root, so the manifest carries no local paths."""
-    root = Path(__file__).resolve().parents[2]
     try:
-        return str(Path(raw_dir).resolve().relative_to(root))
+        return str(Path(raw_dir).resolve().relative_to(PROJECT_ROOT))
     except ValueError:
         return Path(raw_dir).name
 
