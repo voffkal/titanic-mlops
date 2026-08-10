@@ -253,6 +253,8 @@ comments — **do not delete them during refactoring**.
 | A function argument changes nothing | `make_ct(kaggle_version=...)` and `make_pipe(...)` read the global `KAGGLE`; the parameter was dead. Fixed by removing the flag | — |
 | SVM search hangs | `poly` and `sigmoid` with large `C` do not converge on 891 rows; needs `max_iter` and per-kernel grids | — |
 | Up to 80% of search candidates come back `NaN` | `error_score='nan'` together with a global `filterwarnings('ignore')` swallows failures | use `error_score='raise'` |
+| A one-passenger request crashes on `.str` | feature-engine's imputers downcast an all-missing text column to `float64` while imputing another column | `features.py`, `astype("string")` in `TitleFeature` / `CabinCatFeature` |
+| The service answers differently from the batch path — 23 labels of 418 | `coerce_to_schema` left `pclass` as `float64`, and the string interactions render it `"3.0"`, so `sex_pclass`, `age_pclass` and `pclass_fare` were unseen categories on every request | `predict.py`, integers restored after the required-column check |
 
 One more, methodological rather than technical: in the notebook each search had
 its own cross-validation — 6, 4 and 5 folds, `random_state` 0, 49, 39, and
@@ -298,7 +300,7 @@ curl -s localhost:8002/api/v1/predict -H 'content-type: application/json' -d '{"
   {"Pclass":3,"Name":"Braund, Mr. Owen Harris","Sex":"male","Age":22,
    "SibSp":1,"Parch":0,"Ticket":"A/5 21171","Fare":7.25}
 ]}'
-# {"predictions":[1,0],"probabilities":[0.832061,0.124584],"model_version":"0.1.0.dev0"}
+# {"predictions":[1,0],"probabilities":[0.898311,0.124421],"model_version":"0.1.0"}
 ```
 
 **Field names are the Kaggle ones**, so a row of `test.csv` posts unchanged;
@@ -348,13 +350,13 @@ Metal, and the container runs MLX on CPU. Across all 418 test passengers:
 
 | | |
 |---|---|
-| largest probability shift | 1.27e-4 |
-| median shift | 3.15e-5 |
+| largest probability shift | 9.16e-5 |
+| median shift | 2.57e-5 |
 | labels that differ | 0 of 418 |
-| closest probability to the 0.5 threshold | 0.0014, i.e. 11× the largest shift |
+| closest probability to the 0.5 threshold | 0.0030, i.e. 33× the largest shift |
 
 Float32 addition order differs between the two backends. It has never flipped a
-label here, but the margin is 11×, not 1000×, so a passenger sitting exactly on
+label here, but the margin is 33×, not 1000×, so a passenger sitting exactly on
 the threshold could in principle land differently. Only the MLX member is
 affected; the other five are float64 sklearn estimators.
 
@@ -385,7 +387,7 @@ for x86_64 and aarch64, and the base image is bookworm (glibc 2.36).
 
 ## Tests
 
-`uv run pytest` — 202 tests, about 13 seconds, no Kaggle data required.
+`uv run pytest` — 228 tests, about 13 seconds, no Kaggle data required.
 
 The competition files cannot be redistributed, so `conftest.py` generates a
 frame with the same schema, the same missingness and a sex-driven target.
