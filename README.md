@@ -91,10 +91,26 @@ systematic rather than something the feature broke.
 baseline scores 0.76555, or 320. Everything in this repository was worth **six
 passengers** before v0.2.
 
-The model overrides the baseline on 42 of the 418: 24 women it calls lost, 18
-men it calls saved. Of those 42 calls, 24 land and 18 miss — a 57% hit rate on
-exactly the cases where the sex rule is not enough, which is what a +6 net comes
-down to.
+### What the two releases actually bet on
+
+Both releases only ever differ from the sex rule on a handful of passengers, and
+the whole score is decided there.
+
+| | overrides of the sex rule | right | wrong | hit rate |
+|---|---|---|---|---|
+| v0.1.0 | 42 | 24 | 18 | 57% |
+| v0.2.0 | 33 | 23 | 10 | 70% |
+
+v0.2 bets **less** and wins **more**: nine fewer calls against the baseline, one
+fewer correct, eight fewer wrong.
+
+The companions feature itself is measurable in isolation. Switching it off
+through its `ZERO` slot and refitting the stack reproduces v0.1.0 exactly — CV
+0.8337 ±0.0239, the same figure to four places — and changes 17 of the 418
+predictions: 13 passengers it calls saved, 4 it calls lost. On a flipped label
+exactly one of the two releases is right, so 333 − 326 = 2g − 17 pins the
+feature at **g = 12 right of 17, a 71% hit rate**, against 57% for the model's
+own overrides in v0.1.
 
 CV said 0.8337 and the leaderboard says 0.7799, a gap of −0.054. The train-CV
 gap is only +0.0137, so this is not the model memorising its training set. On
@@ -136,6 +152,11 @@ preprocessing is specified together with the model.
 The `ct__poly` slot defaults to `'drop'` rather than `'passthrough'` —
 otherwise its columns would be emitted a second time and every frozen config
 would shift.
+
+The mechanism is exact, not approximate: setting `ct__group_rate__drop` to
+`ZERO` and dropping `ct__group_known` reproduces the v0.1.0 stack at 0.8337
+±0.0239, the released figure to four decimal places. An ablation costs two
+dictionary keys and no code.
 
 ### Step order matters
 
