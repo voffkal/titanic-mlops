@@ -8,7 +8,6 @@ from sklearn.ensemble import StackingClassifier
 from titanic_model.builders import (
     MODELS,
     PREPROCESSING,
-    SEARCH_PROVENANCE,
     STACK_MEMBERS,
     build,
     build_stack,
@@ -18,9 +17,8 @@ ALL_CONFIGS = sorted(MODELS)
 
 
 class TestRegistry:
-    def test_the_three_registries_agree(self):
+    def test_the_registries_agree(self):
         assert set(PREPROCESSING) == set(MODELS)
-        assert set(SEARCH_PROVENANCE) == set(MODELS)
 
     def test_stack_members_exist(self):
         assert set(STACK_MEMBERS) <= set(MODELS)
@@ -29,11 +27,6 @@ class TestRegistry:
     def test_unknown_config_lists_the_alternatives(self):
         with pytest.raises(KeyError, match="unknown config"):
             build("logreg_l2")
-
-    @pytest.mark.parametrize("name", ALL_CONFIGS)
-    def test_config_has_a_provenance_note(self, name):
-        """Where a winner came from is the only thing that makes a frozen dict auditable."""
-        assert len(SEARCH_PROVENANCE[name]) > 20
 
     @pytest.mark.parametrize("name", ALL_CONFIGS)
     def test_every_config_addresses_the_group_slot(self, name):

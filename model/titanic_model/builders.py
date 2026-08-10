@@ -1,8 +1,7 @@
 """Frozen model configs — the winners of the notebook searches.
 
-``ct__*__drop`` slots set to ``ZERO`` are switched-off features. Do not read
-them as feature importance: the sets barely overlap across models while the
-scores stay the same. See README.
+``ct__*__drop`` set to ``ZERO`` switches a feature off; that is not feature
+importance, see README.
 """
 
 from __future__ import annotations
@@ -37,7 +36,7 @@ from .features import Interactions
 from .mlx_mlp import MLXClassifier
 from .pipeline import ZERO, make_pipe
 
-__all__ = ["MODELS", "PREPROCESSING", "SEARCH_PROVENANCE", "STACK_MEMBERS", "build", "build_stack"]
+__all__ = ["MODELS", "PREPROCESSING", "STACK_MEMBERS", "build", "build_stack"]
 
 LOGREG_PREP = {
     'ct__age__drop': 'passthrough',
@@ -382,17 +381,6 @@ PREPROCESSING: dict[str, dict] = {
     'svm': SVM_PREP,
     'mlx': MLX_PREP,
     'logreg_poly': LOGREG_POLY_PREP,
-}
-
-SEARCH_PROVENANCE: dict[str, str] = {
-    'logreg': "notebook cell 36, n_iter=300, StratifiedKFold(6, rs=0), refit=accuracy",
-    'logreg_l1': "notebook cell 41, n_iter=1000, StratifiedKFold(4, rs=0), refit=accuracy",
-    'rf': "notebook cell 46, n_iter=900, StratifiedKFold(5, rs=49), refit=accuracy",
-    'xgb': "notebook cells 50-51, n_iter=90, cv=5 without shuffle, scoring=accuracy",
-    'gb': "notebook cell 55, n_iter=100, StratifiedKFold(5, rs=39), refit=accuracy",
-    'svm': "not in the notebook; per-kernel search 2026-08-10, StratifiedKFold(5, rs=0)",
-    'mlx': "notebook cells 59-62, hyperparameters not searched",
-    'logreg_poly': "not in the notebook; 2026-08-10, C tuned by CV on the expanded feature set",
 }
 
 

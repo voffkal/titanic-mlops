@@ -209,21 +209,7 @@ class FamilyFeatures(BaseEstimator, TransformerMixin):
 
 
 class GroupSurvival(BaseEstimator, TransformerMixin):
-    """Fate of a passenger's companions: how many of the women and boys sharing
-    their surname or ticket survived.
-
-    Family size is already in the pipeline and is a different thing — a count of
-    companions, not their outcome. Among third-class women it barely moves the
-    rate (52-62% for sizes 1-4), while the companions' fate splits the same
-    group 16% against 100%, and it keeps splitting it at a fixed family size.
-
-    Adult men are excluded from the statistic: they died almost regardless, so
-    their labels only dilute the group. ``Master`` marks a boy, so no age needed.
-
-    The values come from other rows' labels, which makes this transductive: it
-    works because families were split across train and test. ``fit_transform``
-    leaves each row's own label out, otherwise it would leak into the model.
-    """
+    """Share of surviving women and boys sharing a surname or ticket. See README."""
 
     def __init__(self, keys: tuple[str, ...] = ("surname", "ticket"), prior_weight: float = 1.0):
         self.keys = keys

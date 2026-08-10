@@ -1,8 +1,5 @@
-"""Wire contract. Field names match ``input_schema.json``; the aliases are the
-Kaggle column names, so a client can post a row of ``test.csv`` unchanged.
-
-Ten fields are hand-written rather than generated: ``test_schemas.py`` asserts
-they still match the artifact's schema, which catches drift without a codegen step.
+"""Wire contract: field names match ``input_schema.json``, aliases are the Kaggle
+column names. Hand-written; ``test_schemas.py`` guards it against drift.
 """
 
 import re

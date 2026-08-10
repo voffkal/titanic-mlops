@@ -228,8 +228,22 @@ instead of `title_Mr`, `age`. Any logic that needs names must live **inside**
 ## Models
 
 Eight configs in `builders.MODELS`, all winners of the notebook searches except
-`svm` and `logreg_poly`, which were tuned later. Provenance of each search is
-recorded in `builders.SEARCH_PROVENANCE`.
+`svm` and `logreg_poly`, which were tuned later.
+
+Where each frozen config came from — note that every search used its own
+cross-validation, which is the reason they could not be compared until they were
+re-run under one protocol:
+
+| Config | Search |
+|---|---|
+| `logreg` | notebook cell 36, `n_iter=300`, `StratifiedKFold(6, rs=0)`, `refit=accuracy` |
+| `logreg_l1` | cell 41, `n_iter=1000`, `StratifiedKFold(4, rs=0)` |
+| `rf` | cell 46, `n_iter=900`, `StratifiedKFold(5, rs=49)` |
+| `xgb` | cells 50–51, `n_iter=90`, `cv=5` without shuffle |
+| `gb` | cell 55, `n_iter=100`, `StratifiedKFold(5, rs=39)` |
+| `mlx` | cells 59–62, hyperparameters not searched |
+| `svm` | not in the notebook; per-kernel search, `StratifiedKFold(5, rs=0)` |
+| `logreg_poly` | not in the notebook; `C` tuned by CV on the expanded feature set |
 
 Numbers below come from the pinned environment (`uv sync`, see `uv.lock`).
 Seven of the eight are bit-reproducible across environments; a different

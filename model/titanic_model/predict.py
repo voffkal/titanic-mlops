@@ -15,20 +15,14 @@ from .train import DEFAULT_ARTIFACTS_DIR
 
 __all__ = ["REQUIRED_COLUMNS", "coerce_to_schema", "load_schema", "make_prediction"]
 
-#: ``pclass``/``sex`` are encoded without an imputer and ``sibsp``/``parch`` add
-#: up to ``family_size``, so a missing value there raises deeper in the pipeline.
-#: ``name`` is a policy choice rather than a technical one: it survives, but the
-#: title falls back to "Empty", a category absent from the training set, and the
-#: probability moves materially. Refusing beats answering from out of distribution.
+#: No imputer downstream, except ``name``, which is a policy choice. See README.
 REQUIRED_COLUMNS = ("pclass", "name", "sex", "sibsp", "parch")
 
 
 @lru_cache(maxsize=2)
 def _load(artifacts_dir: str) -> tuple[object, dict[str, str]]:
     d = Path(artifacts_dir)
-    # A joblib artifact is a pickle: load() executes code while deserialising.
-    # Load ONLY our own artifacts — produced by this train.py or downloaded from
-    # a release of this repository. Never a third-party .joblib.
+    # a joblib artifact is a pickle and load() executes code: our own artifacts only
     model = joblib.load(d / f"titanic_model-{__version__}.joblib")
     schema: dict[str, str] = json.loads((d / "input_schema.json").read_text())
     return model, schema
@@ -39,11 +33,7 @@ def load_schema(artifacts_dir: str | Path | None = None) -> dict[str, str]:
 
 
 def coerce_to_schema(df: pd.DataFrame, schema: dict[str, str]) -> pd.DataFrame:
-    """Type frontier: the column set is mandatory, dtypes are forced to the train schema.
-
-    A text column that is missing for every row in the batch would otherwise be
-    inferred as float64 and break the ``.str`` accessors downstream.
-    """
+    """Type frontier: the column set is mandatory, dtypes are forced to the schema."""
     missing = [c for c in schema if c not in df.columns]
     if missing:
         raise ValueError(f"missing required columns: {missing}")
@@ -59,10 +49,8 @@ def coerce_to_schema(df: pd.DataFrame, schema: dict[str, str]) -> pd.DataFrame:
     if empty:
         raise ValueError(f"columns that cannot be imputed are empty: {empty}")
 
-    # Integers must come back as integers. The interaction features are built by
-    # string concatenation (age_pclass, sex_pclass, pclass_fare), and a float
-    # pclass renders as "3.0", which is not the "3" the encoders were fitted on:
-    # every request would silently carry three unseen categories.
+    # back to int: the string interactions render a float pclass as "3.0", which
+    # is not the "3" the encoders were fitted on
     for col, dtype in schema.items():
         if dtype.startswith("int") and not out[col].isna().any():
             out[col] = out[col].astype("int64")
