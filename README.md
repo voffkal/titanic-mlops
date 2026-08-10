@@ -398,6 +398,22 @@ A single shared CV object is the first thing to fix when porting research code.
 
 Quality gate: `MIN_CV_ACCURACY = 0.78`. Below it, nothing is written.
 
+### Reaching an older release
+
+Every release is an annotated tag carrying its leaderboard score:
+
+```bash
+git tag -n1                                          # what shipped, and what it scored
+git show model-v0.1.0:model_artifacts/metrics.json   # that release's manifest
+git diff model-v0.1.0 model-v0.2.0 -- model/         # what changed between them
+```
+
+The `.joblib` itself is not in git — binaries bloat history irreversibly, so it
+ships as a release asset. For a tag that predates the remote, rebuild it:
+`git checkout model-v0.1.0 && uv run titanic-train`. Training is deterministic,
+so the result is bit-identical to the artifact that scored 0.77990, apart from
+the MLX member if the backend differs.
+
 The `in_sample` block exists only as an overfitting check: the gap against CV
 is +0.0525 for the v0.2 stack, up from +0.0137 in v0.1. That jump is expected
 rather than alarming — at predict time `GroupSurvival` looks a training
