@@ -468,6 +468,15 @@ to the same code.
 
 ## Container
 
+The published image carries the release artifact and needs no Kaggle data:
+
+```bash
+docker run --rm -p 8002:8002 ghcr.io/voffkal/titanic-api:api-v0.1.0
+curl localhost:8002/api/v1/health
+```
+
+Public, `linux/amd64` and `linux/arm64`. To build it yourself instead:
+
 ```bash
 make serve    # trains if needed, builds, runs on http://localhost:8002/docs
 make stop
