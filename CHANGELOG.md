@@ -77,6 +77,13 @@ Push `model-v*` first — `docker.yml` builds against the newest model release.
 
 ### Housekeeping
 
+- The v0.1.0 release notes on GitHub carry an earlier, looser wording of the MLX
+  caveat: they describe inference divergence (~1e-4, no label changes) where the
+  published artifact is CPU-trained and differs from a Metal run by 2 labels of
+  418. Corrected on `main` after that tag was cut, and a tag reproduces the
+  workflow as it stood — which is the point of tags, and worth knowing before
+  the two releases look like they disagree.
+
 - Prose moved out of the code into the README: `SEARCH_PROVENANCE` (a dictionary
   of English sentences read only by a test asserting they were long enough) and
   `GroupSurvival`'s fifteen-line docstring. What stays is the one-line guards.
