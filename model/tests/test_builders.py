@@ -36,6 +36,12 @@ class TestRegistry:
         assert len(SEARCH_PROVENANCE[name]) > 20
 
     @pytest.mark.parametrize("name", ALL_CONFIGS)
+    def test_every_config_addresses_the_group_slot(self, name):
+        """A slot missing from a config keeps its default and the config lies about it."""
+        keys = {"ct__group_known", "ct__group_rate__drop", "ct__group_rate__outlier"}
+        assert keys <= set(PREPROCESSING[name])
+
+    @pytest.mark.parametrize("name", ALL_CONFIGS)
     def test_every_config_key_is_a_real_pipeline_slot(self, name):
         """set_params raises on a typo, so building is the check."""
         assert build(name) is not None

@@ -59,6 +59,12 @@ class TestColumnTransformer:
         kept = pipe.named_steps["drop_constant"].get_feature_names_out()
         assert "pclass_ZERO" not in kept  # a constant column never reaches the estimator
 
+    def test_group_columns_reach_the_matrix(self, frame):
+        """ct has remainder='drop', so a new column without a slot vanishes silently."""
+        X, y = frame
+        names = build("logreg").fit(X, y).named_steps["ct"].get_feature_names_out()
+        assert {"group_rate", "group_known"} <= set(names)
+
     def test_remainder_drops_raw_text_columns(self, frame):
         X, y = frame
         names = build("logreg").fit(X, y).named_steps["ct"].get_feature_names_out()
@@ -75,6 +81,7 @@ class TestPipelineOrder:
             "fare_imputer",
             "embarked_imputer",
             "title",
+            "group_feats",
             "age_feats",
             "fare_feats",
             "cabin_cat",
@@ -95,6 +102,8 @@ class TestPipelineOrder:
             ("missing_indicators", "fare_imputer", "the indicator must see the original NaN"),
             ("fare_imputer", "fare_feats", "quantile edges need a non-null fare"),
             ("title", "age_feats", "age is imputed by title"),
+            ("title", "group_feats", "Master marks the boys who count towards a group"),
+            ("group_feats", "fare_feats", "fare_feats drops ticket, which is a group key"),
             ("fare_feats", "ct", "ct consumes fare_per_person"),
             ("ct", "scaler", "the scaler needs a numeric matrix"),
             ("scaler", "sampler", "SMOTE interpolates in the scaled space"),

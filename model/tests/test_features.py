@@ -11,6 +11,7 @@ from titanic_model.features import (
     CabinCatFeature,
     FamilyFeatures,
     FareFeatures,
+    GroupSurvival,
     InteractionFeatures,
     Interactions,
     NaNReporter,
@@ -149,6 +150,69 @@ class TestCabinCatFeature:
         """The encoders downstream were fitted against object, not StringDtype."""
         out = CabinCatFeature().fit_transform(pd.DataFrame({"cabin": ["C85", None]}))
         assert out["cabin_cat"].dtype == object
+
+
+class TestGroupSurvival:
+    def frame(self):
+        """Two families: the Browns all died, the Greens all survived."""
+        rows = [
+            ("Brown, Mrs. A", "female", "Mrs", "T1", 0),
+            ("Brown, Miss. B", "female", "Miss", "T1", 0),
+            ("Brown, Master. C", "male", "Master", "T1", 0),
+            ("Green, Mrs. D", "female", "Mrs", "T2", 1),
+            ("Green, Miss. E", "female", "Miss", "T2", 1),
+            ("Smith, Mr. F", "male", "Mr", "T3", 0),
+        ]
+        X = pd.DataFrame(
+            [{"name": n, "sex": s, "title": t, "ticket": k} for n, s, t, k, _ in rows]
+        )
+        return X, pd.Series([r[-1] for r in rows])
+
+    def test_needs_labels(self):
+        X, _ = self.frame()
+        with pytest.raises(ValueError, match="needs y"):
+            GroupSurvival().fit(X)
+
+    def test_separates_the_two_families(self):
+        X, y = self.frame()
+        out = GroupSurvival().fit(X, y).transform(X)
+        assert out.loc[0, "group_rate"] < 0.3  # Browns
+        assert out.loc[3, "group_rate"] > 0.7  # Greens
+        assert out["group_known"].tolist() == [1, 1, 1, 1, 1, 0]
+
+    def test_leave_one_out_hides_the_own_label(self):
+        """Without it a row reads its own outcome back and the model memorises."""
+        X, y = self.frame()
+        gs = GroupSurvival()
+        loo = gs.fit_transform(X, y)["group_rate"]
+        plain = gs.transform(X)["group_rate"]
+        assert (loo != plain).any()
+        # the lone man contributes nothing to any group, so he sees only the prior
+        assert loo.iloc[5] == pytest.approx(gs.prior_)
+
+    def test_adult_men_do_not_count_towards_a_group(self):
+        """They died almost regardless; their labels only dilute the statistic."""
+        X, y = self.frame()
+        extra = pd.concat([X, pd.DataFrame([{"name": "Green, Mr. G", "sex": "male",
+                                             "title": "Mr", "ticket": "T2"}])], ignore_index=True)
+        y_extra = pd.concat([y, pd.Series([0])], ignore_index=True)
+        rate = GroupSurvival().fit(extra, y_extra).transform(extra).loc[3, "group_rate"]
+        assert rate > 0.7  # still a surviving family despite the dead man
+
+    def test_unknown_group_falls_back_to_the_prior(self):
+        X, y = self.frame()
+        fitted = GroupSurvival().fit(X, y)
+        stranger = pd.DataFrame([{"name": "Nobody, Mrs. Z", "sex": "female",
+                                  "title": "Mrs", "ticket": "T99"}])
+        out = fitted.transform(stranger)
+        assert out["group_rate"].iloc[0] == pytest.approx(fitted.prior_)
+        assert out["group_known"].iloc[0] == 0
+
+    def test_missing_ticket_is_not_a_group(self):
+        X, y = self.frame()
+        X.loc[0, "ticket"] = None
+        out = GroupSurvival().fit(X, y).transform(X)
+        assert np.isfinite(out["group_rate"]).all()  # surname still carries her
 
 
 def test_family_features():

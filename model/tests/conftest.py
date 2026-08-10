@@ -41,16 +41,26 @@ def make_frame(n: int = 120, seed: int = 0, signal: bool = True) -> tuple[pd.Dat
 
     pclass = rng.choice([1, 2, 3], size=n, p=[0.25, 0.25, 0.5])
 
+    # Families share a surname and usually a ticket, and share a fate. Without
+    # this the frame gives every passenger a unique surname, GroupSurvival is
+    # degenerate, and nothing exercises it.
+    family = rng.integers(0, max(2, n // 3), size=n)
+    ticket = np.array([f"T{f}" for f in family])
+    apart = rng.random(n) < 0.15  # some relatives booked separately
+    ticket[apart] = np.array([f"T{f}" for f in rng.integers(0, max(2, n // 3), size=apart.sum())])
+
     X = pd.DataFrame(
         {
             "pclass": pclass,
-            "name": [f"Fam{i}, {t}. Given{i}" for i, t in enumerate(title)],
+            "name": [
+                f"Fam{f}, {t}. Given{i}"
+                for i, (f, t) in enumerate(zip(family, title, strict=True))
+            ],
             "sex": sex,
             "age": age,
             "sibsp": rng.integers(0, 4, size=n),
             "parch": rng.integers(0, 3, size=n),
-            # n // 3 distinct tickets: families share one, like the real data
-            "ticket": rng.choice([f"T{i}" for i in range(max(2, n // 3))], size=n),
+            "ticket": ticket,
             "fare": fare,
             "cabin": np.where(rng.random(n) < 0.25, "C" + rng.integers(1, 120, n).astype(str), None),
             "embarked": embarked,
@@ -58,7 +68,10 @@ def make_frame(n: int = 120, seed: int = 0, signal: bool = True) -> tuple[pd.Dat
     )
 
     if signal:
-        logit = 1.8 * (sex == "female") - 0.5 * pclass + rng.normal(0, 0.7, n)
+        # 0.4 keeps the synthetic problem above the 0.78 quality gate; a stronger
+        # family effect makes it unlearnable from the thin per-fold group statistics
+        family_effect = rng.normal(0, 0.4, size=family.max() + 1)[family]
+        logit = 1.8 * (sex == "female") - 0.5 * pclass + family_effect + rng.normal(0, 0.7, n)
         labels = (logit > np.median(logit)).astype(int)
     else:
         labels = rng.integers(0, 2, size=n)
