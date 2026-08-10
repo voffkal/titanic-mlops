@@ -518,6 +518,15 @@ leaderboard, which is visible. That is why `release-model.yml` produces
 `submission.csv` as a release asset: the leaderboard number has to describe the
 artifact that was published, not a local rebuild of it.
 
+Those figures are v0.1. Measured again on the real releases, v0.2 turned out
+insensitive: the artifact CI trained on CPU and the one trained here on Metal
+agree on **all 418 labels**, CV 0.8456 ±0.0215 against 0.8465 ±0.0184. The
+companions feature is decisive for the passengers it covers, so the MLX member's
+drift no longer reaches the stack's output — the same robustness that narrowed
+the fold-to-fold spread. The release still ships its own submission, because
+that property was measured after the fact and is not guaranteed to survive the
+next change to the model.
+
 ---
 
 ## CI

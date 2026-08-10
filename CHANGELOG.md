@@ -77,13 +77,19 @@ Push `model-v*` first — `docker.yml` builds against the newest model release.
 
 ### Housekeeping
 
-- The v0.1.0 release notes on GitHub carry an earlier, looser wording of the MLX
-  caveat: they describe inference divergence (~1e-4, no label changes) where the
-  published artifact is CPU-trained and differs from a Metal run by 2 labels of
-  418. Corrected on `main` after that tag was cut, and a tag reproduces the
-  workflow as it stood — which is the point of tags, and worth knowing before
-  the two releases look like they disagree.
-
+- **Both published releases carry an earlier wording of the MLX caveat.** A tag
+  reproduces the workflow as it stood, and the correction landed on `main` after
+  both were cut. The note as published describes inference divergence rather
+  than the training divergence that actually applies to a CI-built artifact.
+- **The corrected wording no longer quotes a label count.** The v0.1 measurement
+  (2 of 418) does not hold for v0.2: the CPU-trained release artifact and the
+  Metal-trained local one agree on all 418 labels. Baking a model-dependent
+  constant into a generic template is how notes go stale; it now states the
+  operational point instead — the artifact and its submission belong together.
+- **`docker.yml` assumed `model_artifacts/` was absent after checkout.** It is
+  not: `metrics.json` and `input_schema.json` are tracked, so `mkdir` failed and
+  the release download would have refused to overwrite them. `mkdir -p` plus
+  `--clobber`. Inherited from houseprice, where that directory is fully ignored.
 - Prose moved out of the code into the README: `SEARCH_PROVENANCE` (a dictionary
   of English sentences read only by a test asserting they were long enough) and
   `GroupSurvival`'s fifteen-line docstring. What stays is the one-line guards.
