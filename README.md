@@ -64,6 +64,23 @@ A note on reading CV numbers: σ across folds is ≈0.025, so differences below
 about 0.02 are noise. Several models below sit inside that band and should be
 treated as tied, not ranked.
 
+### What the leaderboard said
+
+**v0.1.0 scored 0.77990** — 326 of 418 passengers. The "all women survive"
+baseline scores 0.76555, or 320. Everything in this repository is worth **six
+passengers**.
+
+The model overrides the baseline on 42 of the 418: 24 women it calls lost, 18
+men it calls saved. Of those 42 calls, 24 land and 18 miss — a 57% hit rate on
+exactly the cases where the sex rule is not enough, which is what a +6 net comes
+down to.
+
+CV said 0.8337 and the leaderboard says 0.7799, a gap of −0.054. The train-CV
+gap is only +0.0137, so this is not the model memorising its training set. On
+418 rows σ is 0.0203, which puts the 95% interval at [0.740, 0.820]: the
+interval is twice as wide as the entire spread between the eight configs. A
+leaderboard position in this competition is mostly a draw from that interval.
+
 ---
 
 ## Data
