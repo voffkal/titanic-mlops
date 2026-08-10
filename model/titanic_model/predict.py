@@ -59,6 +59,14 @@ def coerce_to_schema(df: pd.DataFrame, schema: dict[str, str]) -> pd.DataFrame:
     if empty:
         raise ValueError(f"columns that cannot be imputed are empty: {empty}")
 
+    # Integers must come back as integers. The interaction features are built by
+    # string concatenation (age_pclass, sex_pclass, pclass_fare), and a float
+    # pclass renders as "3.0", which is not the "3" the encoders were fitted on:
+    # every request would silently carry three unseen categories.
+    for col, dtype in schema.items():
+        if dtype.startswith("int") and not out[col].isna().any():
+            out[col] = out[col].astype("int64")
+
     return out
 
 

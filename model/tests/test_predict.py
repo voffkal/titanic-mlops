@@ -49,8 +49,8 @@ class TestCoercion:
         raw = pd.DataFrame([{**{c: None for c in SCHEMA}, "pclass": "3", "sibsp": 0, "parch": 0,
                              "name": "A, Mr. B", "sex": "male"}])
         out = coerce_to_schema(raw, SCHEMA)
-        assert out["pclass"].dtype == "float64"  # numeric strings are parsed
-        assert out["pclass"].iloc[0] == 3.0
+        assert out["pclass"].dtype == "int64"  # a numeric string is parsed, not left as text
+        assert out["pclass"].iloc[0] == 3
         assert out["cabin"].dtype == "object"
 
     def test_text_column_stays_text_when_wholly_missing(self):
@@ -85,6 +85,27 @@ class TestCoercion:
         passenger["fare"] = "дорого"
         assert coerce_to_schema(pd.DataFrame([passenger]), SCHEMA)["fare"].isna().all()
 
+    @pytest.mark.parametrize("column", ["pclass", "sibsp", "parch"])
+    def test_integer_columns_stay_integers(self, passenger, column):
+        """float pclass renders as '3.0' in the string interactions, and '3.0_low'
+        is not a category any encoder was fitted on."""
+        out = coerce_to_schema(pd.DataFrame([passenger]), SCHEMA)
+        assert out[column].dtype == "int64"
+        assert out[column].astype(str).iloc[0].isdigit()
+
+    def test_numeric_dtypes_survive_a_round_trip(self):
+        """coerce must not change the numeric dtypes of an already well-formed frame."""
+        X, _ = make_frame(20)
+        out = coerce_to_schema(X, SCHEMA)
+        numeric = [c for c, d in SCHEMA.items() if d != "str"]
+        assert out[numeric].dtypes.astype(str).to_dict() == X[numeric].dtypes.astype(str).to_dict()
+
+    def test_text_columns_stay_usable_as_text(self):
+        """object rather than the frame's str dtype is fine — .str works on both."""
+        X, _ = make_frame(20)
+        out = coerce_to_schema(X, SCHEMA)
+        assert out["name"].str.contains(",").all()
+
 
 class TestMakePrediction:
     def test_returns_labels_probabilities_and_version(self, artifacts, passenger):
@@ -118,6 +139,16 @@ class TestMakePrediction:
     def test_empty_request_is_rejected(self, artifacts):
         with pytest.raises(ValueError, match="no passengers"):
             make_prediction([], artifacts_dir=artifacts)
+
+    def test_serving_agrees_with_the_training_path(self, artifacts):
+        """The batch path calls the pipeline directly; make_prediction goes through
+        coerce_to_schema. A dtype changed on the way in moved 23 of 418 labels."""
+        model, _ = _load(str(artifacts))
+        X, _ = make_frame(120)
+
+        direct = model.predict(X)
+        served = make_prediction(X, artifacts_dir=artifacts)["predictions"]
+        assert list(direct) == served
 
     def test_json_serialisable_types(self, artifacts, passenger):
         result = make_prediction([passenger], artifacts_dir=artifacts)
