@@ -68,8 +68,9 @@ jobs:
               f"train-CV gap {m['metrics']['train_cv_gap']:+.4f}\n"
               f"lift over the sex rule {base['cv_lift']:+.4f}\n\n"
               f"sklearn {m['libraries']['scikit-learn']}, xgboost {m['libraries']['xgboost']}, "
-              f"mlx {m['libraries']['mlx']} (CPU backend on CI; a Metal run moves "
-              f"probabilities by ~1e-4 and no label on the 418 test rows)"
+              f"mlx {m['libraries']['mlx']}. Trained on the CPU backend here; the same "
+              f"code trained on Metal moves 2 of the 418 test labels, so this artifact "
+              f"and its submission.csv belong together."
           )
           PY
           )
