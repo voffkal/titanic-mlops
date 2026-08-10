@@ -46,8 +46,11 @@ jobs:
 
       # The quality gate inside train() refuses to write artifacts below 0.78 CV
       # accuracy, so a broken pipeline fails the release here rather than shipping.
+      # --submission: the leaderboard number has to describe the artifact being
+      # published. MLX trained on CPU here differs from a Metal run by 2 labels
+      # in 418, so a submission produced locally would score a different model.
       - name: Train the release artifact
-        run: uv run titanic-train
+        run: uv run titanic-train --submission
 
       - name: Publish the release
         env:
@@ -74,4 +77,5 @@ jobs:
             model_artifacts/titanic_model-*.joblib \
             model_artifacts/input_schema.json \
             model_artifacts/metrics.json \
+            model_artifacts/submission.csv \
             --title "$GITHUB_REF_NAME" --notes "$NOTES"

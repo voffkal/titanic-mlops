@@ -360,6 +360,22 @@ label here, but the margin is 33×, not 1000×, so a passenger sitting exactly o
 the threshold could in principle land differently. Only the MLX member is
 affected; the other five are float64 sklearn estimators.
 
+**Training on the other backend is a different matter.** The figures above are
+one artifact evaluated twice. Train the stack with MLX pinned to CPU and the
+same divergence accumulates over 300 epochs of SGD:
+
+| | inference, one artifact | training, two artifacts |
+|---|---|---|
+| largest probability shift | 9.16e-5 | 2.29e-2 |
+| median shift | 2.57e-5 | 2.75e-3 |
+| labels that differ | 0 of 418 | **2 of 418** |
+| CV accuracy | — | 0.8339 vs 0.8337 |
+
+Equal quality, different model. Two passengers out of 418 is 0.005 on the
+leaderboard, which is visible. That is why `release-model.yml` produces
+`submission.csv` as a release asset: the leaderboard number has to describe the
+artifact that was published, not a local rebuild of it.
+
 ---
 
 ## CI
