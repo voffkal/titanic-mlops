@@ -13,6 +13,7 @@ __all__ = [
     "FareFeatures",
     "CabinCatFeature",
     "FamilyFeatures",
+    "GroupSurvival",
     "InteractionFeatures",
     "NaNReporter",
 ]
@@ -205,6 +206,98 @@ class FamilyFeatures(BaseEstimator, TransformerMixin):
         X["family_size"] = X["sibsp"] + X["parch"] + 1
         X["is_alone"] = (X["family_size"] == 1).astype(int)
         return X
+
+
+class GroupSurvival(BaseEstimator, TransformerMixin):
+    """Fate of a passenger's companions: how many of the women and boys sharing
+    their surname or ticket survived.
+
+    Family size is already in the pipeline and is a different thing — a count of
+    companions, not their outcome. Among third-class women it barely moves the
+    rate (52-62% for sizes 1-4), while the companions' fate splits the same
+    group 16% against 100%, and it keeps splitting it at a fixed family size.
+
+    Adult men are excluded from the statistic: they died almost regardless, so
+    their labels only dilute the group. ``Master`` marks a boy, so no age needed.
+
+    The values come from other rows' labels, which makes this transductive: it
+    works because families were split across train and test. ``fit_transform``
+    leaves each row's own label out, otherwise it would leak into the model.
+    """
+
+    def __init__(self, keys: tuple[str, ...] = ("surname", "ticket"), prior_weight: float = 1.0):
+        self.keys = keys
+        self.prior_weight = prior_weight
+
+    @staticmethod
+    def _key_frame(X: pd.DataFrame) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "surname": X["name"].astype("string").str.split(",").str[0].str.strip(),
+                "ticket": X["ticket"].astype("string"),
+            },
+            index=X.index,
+        )
+
+    @staticmethod
+    def _women_and_children(X: pd.DataFrame) -> np.ndarray:
+        return ((X["sex"] == "female") | (X["title"] == "Master")).to_numpy()
+
+    def fit(self, X: pd.DataFrame, y=None) -> GroupSurvival:
+        if y is None:
+            raise ValueError("GroupSurvival needs y: the feature is built from labels")
+
+        y = pd.Series(np.asarray(y), index=X.index)
+        self.prior_ = float(y.mean())
+
+        keys = self._key_frame(X)
+        counted = self._women_and_children(X)
+        self.stats_ = {}
+        for key in self.keys:
+            frame = pd.DataFrame({"k": keys[key][counted], "y": y[counted]}).dropna(subset=["k"])
+            grouped = frame.groupby("k")["y"]
+            self.stats_[key] = pd.DataFrame({"sum": grouped.sum(), "n": grouped.size()})
+        return self
+
+    def _totals(self, X: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+        keys = self._key_frame(X)
+        total = np.zeros(len(X))
+        count = np.zeros(len(X))
+        for key in self.keys:
+            stats = self.stats_[key]
+            total += keys[key].map(stats["sum"]).fillna(0).to_numpy()
+            count += keys[key].map(stats["n"]).fillna(0).to_numpy()
+        return total, count
+
+    def _emit(self, X: pd.DataFrame, total: np.ndarray, count: np.ndarray) -> pd.DataFrame:
+        # smoothing towards the prior: a group of one otherwise reads as a hard 0 or 1
+        rate = (total + self.prior_weight * self.prior_) / (count + self.prior_weight)
+        out = X.copy()
+        out["group_rate"] = np.where(count > 0, rate, self.prior_)
+        out["group_known"] = (count > 0).astype(int)
+        return out
+
+    def fit_transform(self, X: pd.DataFrame, y=None, **fit_params) -> pd.DataFrame:
+        """Leave-one-out, so a row never sees its own label through its own group."""
+        self.fit(X, y)
+
+        keys = self._key_frame(X)
+        counted = self._women_and_children(X)
+        own = np.asarray(y, dtype=float)
+
+        total = np.zeros(len(X))
+        count = np.zeros(len(X))
+        for key in self.keys:
+            stats = self.stats_[key]
+            column = keys[key]
+            # subtract per key: a row is only in this group if its key is present
+            mine = counted & column.notna().to_numpy()
+            total += column.map(stats["sum"]).fillna(0).to_numpy() - np.where(mine, own, 0.0)
+            count += column.map(stats["n"]).fillna(0).to_numpy() - mine
+        return self._emit(X, total, count)
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return self._emit(X, *self._totals(X))
 
 
 class InteractionFeatures(BaseEstimator, TransformerMixin):

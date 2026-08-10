@@ -14,6 +14,7 @@ from .features import (
     CabinCatFeature,
     FamilyFeatures,
     FareFeatures,
+    GroupSurvival,
     InteractionFeatures,
     NaNReporter,
     TitleFeature,
@@ -229,6 +230,17 @@ def make_ct() -> ColumnTransformer:
                 ),
                 ["pclass_fare"],
             ),
+            (
+                "group_rate",
+                Pipeline(
+                    [
+                        ("outlier", "passthrough"),
+                        ("drop", "passthrough"),
+                    ]
+                ),
+                ["group_rate"],
+            ),
+            ("group_known", "passthrough", ["group_known"]),
             # 'drop', not 'passthrough': otherwise the columns are emitted twice
             ("poly", "drop", POLY_COLUMNS),
         ],
@@ -244,6 +256,8 @@ def make_pipe() -> ImbPipeline:
             ("fare_imputer", None),  # before fare_feats: quantile edges need non-null fare
             ("embarked_imputer", None),
             ("title", TitleFeature()),  # before age_feats: age is imputed by title
+            # before fare_feats, which drops ticket; needs title to spot the boys
+            ("group_feats", GroupSurvival()),
             ("age_feats", AgeFeatures(group="title")),
             ("fare_feats", FareFeatures(q=4, drop_ticket=True)),
             ("cabin_cat", CabinCatFeature(fill_value="Missing")),
