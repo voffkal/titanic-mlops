@@ -7,6 +7,12 @@ CV under the one protocol the project uses —
 `RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=0)` — and, where
 stated, the Kaggle public leaderboard.
 
+The two packages version independently: `model-v*` tags a trained artifact,
+`api-v*` tags the service that serves it. Headings below are model versions;
+API changes appear under the release they shipped with. `api-v0.1.0` covers
+everything the service has done so far, since it had not been released before.
+Push `model-v*` first — `docker.yml` builds against the newest model release.
+
 ## [0.2.0] — companions
 
 **Leaderboard 0.79665**, 333 of 418. CV accuracy 0.8465 ±0.0184, roc_auc 0.8863.
