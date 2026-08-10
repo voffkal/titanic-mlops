@@ -66,13 +66,30 @@ treated as tied, not ranked.
 
 ### What the leaderboard said
 
-**v0.2.0** — submitted, awaiting the score. CV moved 0.8337 → 0.8465 on the
-companions feature, and the submission differs from v0.1.0's by nine survivors
-(146 → 155).
+| release | leaderboard | of 418 | over the sex rule |
+|---|---|---|---|
+| sex rule | 0.76555 | 320 | — |
+| v0.1.0 | 0.77990 | 326 | +6 |
+| **v0.2.0** | **0.79665** | **333** | **+13** |
+
+**The companions feature doubled what the project is worth**, from six
+passengers to thirteen. More usefully, it is the first change here that
+survived the whole route — paired t-test on CV, then release, then an external
+score:
+
+```
+CV predicted    +0.0128
+leaderboard gave +0.01675
+```
+
+The gain came in slightly above the CV estimate, in the direction predicted:
+inside a fold the group statistics are built from 713 rows, at test time from
+all 891. The CV→LB gap itself barely moved, −0.0538 to −0.0499, so the offset is
+systematic rather than something the feature broke.
 
 **v0.1.0 scored 0.77990** — 326 of 418 passengers. The "all women survive"
-baseline scores 0.76555, or 320. Everything in this repository is worth **six
-passengers**.
+baseline scores 0.76555, or 320. Everything in this repository was worth **six
+passengers** before v0.2.
 
 The model overrides the baseline on 42 of the 418: 24 women it calls lost, 18
 men it calls saved. Of those 42 calls, 24 land and 18 miss — a 57% hit rate on
