@@ -400,7 +400,8 @@ Quality gate: `MIN_CV_ACCURACY = 0.78`. Below it, nothing is written.
 
 ### Reaching an older release
 
-Every release is an annotated tag carrying its leaderboard score:
+What changed between versions and why — [CHANGELOG.md](CHANGELOG.md). Every
+release is an annotated tag carrying its leaderboard score:
 
 ```bash
 git tag -n1                                          # what shipped, and what it scored
@@ -576,6 +577,7 @@ exceptions from pinned dependencies.
 ```
 pyproject.toml       uv workspace root, ruff and pytest config
 uv.lock              pinned resolution
+CHANGELOG.md         what changed between releases, and why
 Makefile             train, metrics, image, serve
 Dockerfile           two-stage build of the api image
 compose.yaml         local run with a healthcheck
