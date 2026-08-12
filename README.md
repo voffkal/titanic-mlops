@@ -545,6 +545,7 @@ next change to the model.
 | `ci.yml` | push to main, PR | ruff, the full suite, then builds the image and probes `/health` and `/predict` in a running container |
 | `release-model.yml` | tag `model-v*` | fetches the competition data, runs the gate, trains, publishes a release with the artifact, schema and manifest |
 | `docker.yml` | tag `api-v*` | takes the artifact from the newest `model-v*` release, builds linux/amd64 + linux/arm64, pushes to ghcr |
+| `hf-space.yml` | tag `api-v*` | repoints the Hugging Face Space at that image tag and pushes it |
 
 **`ci.yml` needs no secret and downloads no data** — that is the payoff of the
 synthetic fixtures. The image job trains a throwaway model on generated data
@@ -558,6 +559,22 @@ regressed below 0.78 CV accuracy fails the release instead of shipping.
 
 Both architectures are buildable because mlx publishes `manylinux_2_35` wheels
 for x86_64 and aarch64, and the base image is bookworm (glibc 2.36).
+
+### Hosting
+
+`deploy/hf-space/` is a Hugging Face Space: a one-line Dockerfile that runs the
+published image, plus a README whose front-matter declares `sdk: docker` and the
+port. Nothing is rebuilt there, so the Space serves the artifact from the model
+release rather than something that merely resembles it.
+
+The image happens to satisfy the Space contract already — it runs as uid 1000
+and writes nothing at runtime — which is why the deployment is two files.
+Requires the repository variable `HF_SPACE` (`owner/space`) and the secret
+`HF_TOKEN`.
+
+A free Space sleeps after inactivity and wakes on the next request, which suits
+a portfolio endpoint better than an always-on container: cold start is the price
+of the 1.3 GB scientific stack, paid only when someone actually calls it.
 
 ---
 

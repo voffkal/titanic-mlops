@@ -36,3 +36,4 @@ submission*.csv
 
 ### Editor tooling
 .claude/
+.vscode/
