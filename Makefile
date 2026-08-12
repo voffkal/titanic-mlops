@@ -1,6 +1,8 @@
 ARTIFACTS = model_artifacts
 
-.PHONY: help train test metrics submit image serve stop clean
+SPACE_DIR ?= ../titanic-hf-space
+
+.PHONY: help train test metrics submit image serve space stop clean
 
 ## list the available commands
 help:
@@ -57,6 +59,17 @@ image:
 serve: image
 	docker compose up -d api
 	@echo "API: http://localhost:8002/docs"
+
+## copy deploy/hf-space into the Space clone, commit and push
+space:
+	@test -d $(SPACE_DIR)/.git || { echo "no Space clone at $(SPACE_DIR)"; exit 1; }
+	cp deploy/hf-space/app.py deploy/hf-space/requirements.txt deploy/hf-space/README.md $(SPACE_DIR)/
+	@cd $(SPACE_DIR) && git add -A && \
+	  if git diff --staged --quiet; then \
+	    echo "the Space already matches deploy/hf-space"; \
+	  else \
+	    git commit -m "sync from $$(git -C $(CURDIR) rev-parse --short HEAD)" && git push; \
+	  fi
 
 ## stop the containers
 stop:

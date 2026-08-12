@@ -572,8 +572,10 @@ A Docker Space would have served the published image directly and needed no code
 at all, but it requires a paid plan. `deploy/docker-host/` keeps that one-line
 Dockerfile, which still works on Cloud Run, Render, Fly or a Space on PRO.
 
-The Space is repointed by the second job of `release-model.yml` rather than by a
-workflow of its own: it downloads release assets at startup, so it must not
+`make space` copies `deploy/hf-space/` into a local clone of the Space, commits
+and pushes — the two directories are otherwise easy to confuse, and only the one
+inside this repository is the source. The Space is repointed by the second job of
+`release-model.yml` rather than by a workflow of its own: it downloads release assets at startup, so it must not
 rebuild until the release exists. Needs the repository variable `HF_SPACE`
 (`owner/space`) and the secret `HF_TOKEN`.
 

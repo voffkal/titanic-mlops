@@ -25,7 +25,12 @@ RELEASE = f"https://github.com/voffkal/titanic-mlops/releases/download/model-v{_
 ARTIFACTS = Path(os.environ.get("ARTIFACTS_DIR", "/tmp/titanic-artifacts"))
 ASSETS = [f"titanic_model-{__version__}.joblib", "input_schema.json", "metrics.json"]
 
-SEX_RULE = 0.76555  # "all women survive" on the public leaderboard
+# Passenger counts are stated, not derived: int(0.76555 * 418) truncates to 319
+# and the demo spent a day claiming the baseline got one fewer right than it did.
+TOTAL = 418
+LB_SCORE = 0.79665
+LB_CORRECT = 333
+SEX_RULE_CORRECT = 320  # "all women survive"
 TITLE = re.compile(r",\s*[^.]+\.")  # the API rejects a title-less name; so does this
 
 
@@ -147,9 +152,9 @@ with gr.Blocks(title="Titanic Survival") as demo:
         # Would this passenger have survived?
 
         A six-model stack trained on the 891 labelled passengers of the Kaggle
-        Titanic dataset. **Public leaderboard {0.79665}** — 333 of 418 passengers,
-        against {int(SEX_RULE * 418)} for simply predicting that every woman lived.
-        The whole model is worth thirteen passengers.
+        Titanic dataset. **Public leaderboard {LB_SCORE}** — {LB_CORRECT} of {TOTAL}
+        passengers, against {SEX_RULE_CORRECT} for simply predicting that every woman
+        lived. The whole model is worth {LB_CORRECT - SEX_RULE_CORRECT} passengers.
 
         Method, measurements and the arguments against it:
         [github.com/voffkal/titanic-mlops](https://github.com/voffkal/titanic-mlops)
