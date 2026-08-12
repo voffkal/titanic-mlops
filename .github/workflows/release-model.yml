@@ -80,3 +80,33 @@ jobs:
             model_artifacts/metrics.json \
             model_artifacts/submission.csv \
             --title "$GITHUB_REF_NAME" --notes "$NOTES"
+
+  # Second job rather than a workflow of its own: the Space downloads the release
+  # assets at startup, so it must not be rebuilt until the release exists.
+  sync-space:
+    needs: train-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Point the Space at this release
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          test -n "$HF_TOKEN" || { echo "secret HF_TOKEN is not set"; exit 1; }
+          test -n "$HF_SPACE" || { echo "variable HF_SPACE is not set (owner/space)"; exit 1; }
+
+          sed -i "s|\.git@model-v[^#]*#|.git@${GITHUB_REF_NAME}#|" deploy/hf-space/requirements.txt
+          grep 'titanic-model @' deploy/hf-space/requirements.txt
+
+          git clone "https://huggingface.co/spaces/$HF_SPACE" space
+          cp deploy/hf-space/app.py deploy/hf-space/requirements.txt deploy/hf-space/README.md space/
+
+          cd space
+          git config user.name "Voffkal"
+          git config user.email "voffkal@hotmail.com"
+          git add -A
+          git diff --staged --quiet && { echo "the Space already serves this release"; exit 0; }
+          git commit -m "serve $GITHUB_REF_NAME"
+          git push "https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE" HEAD:main

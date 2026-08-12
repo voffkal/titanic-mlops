@@ -1,0 +1,4 @@
+# The model package is installed straight from the tag its artifact was released
+# from, so __version__ matches the joblib filename app.py downloads.
+titanic-model @ git+https://github.com/voffkal/titanic-mlops.git@model-v0.2.0#subdirectory=model
+gradio>=5.0

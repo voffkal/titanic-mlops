@@ -543,9 +543,9 @@ next change to the model.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | push to main, PR | ruff, the full suite, then builds the image and probes `/health` and `/predict` in a running container |
-| `release-model.yml` | tag `model-v*` | fetches the competition data, runs the gate, trains, publishes a release with the artifact, schema and manifest |
+| `release-model.yml` | tag `model-v*` | fetches the competition data, runs the gate, trains, publishes a release with the artifact, schema and manifest, then repoints the Hugging Face Space at it |
 | `docker.yml` | tag `api-v*` | takes the artifact from the newest `model-v*` release, builds linux/amd64 + linux/arm64, pushes to ghcr |
-| `hf-space.yml` | tag `api-v*` | repoints the Hugging Face Space at that image tag and pushes it |
+
 
 **`ci.yml` needs no secret and downloads no data** — that is the payoff of the
 synthetic fixtures. The image job trains a throwaway model on generated data
@@ -562,19 +562,24 @@ for x86_64 and aarch64, and the base image is bookworm (glibc 2.36).
 
 ### Hosting
 
-`deploy/hf-space/` is a Hugging Face Space: a one-line Dockerfile that runs the
-published image, plus a README whose front-matter declares `sdk: docker` and the
-port. Nothing is rebuilt there, so the Space serves the artifact from the model
-release rather than something that merely resembles it.
+`deploy/hf-space/` is a Gradio Space: `app.py`, a `requirements.txt` that installs
+the model package from the tag its artifact was released from, and a README whose
+front-matter carries the Space manifest. At startup the app downloads the
+artifact from the GitHub release, so what answers there is the binary the
+leaderboard score belongs to rather than a rebuild of it.
 
-The image happens to satisfy the Space contract already — it runs as uid 1000
-and writes nothing at runtime — which is why the deployment is two files.
-Requires the repository variable `HF_SPACE` (`owner/space`) and the secret
-`HF_TOKEN`.
+A Docker Space would have served the published image directly and needed no code
+at all, but it requires a paid plan. `deploy/docker-host/` keeps that one-line
+Dockerfile, which still works on Cloud Run, Render, Fly or a Space on PRO.
 
-A free Space sleeps after inactivity and wakes on the next request, which suits
-a portfolio endpoint better than an always-on container: cold start is the price
-of the 1.3 GB scientific stack, paid only when someone actually calls it.
+The Space is repointed by the second job of `release-model.yml` rather than by a
+workflow of its own: it downloads release assets at startup, so it must not
+rebuild until the release exists. Needs the repository variable `HF_SPACE`
+(`owner/space`) and the secret `HF_TOKEN`.
+
+A free Space sleeps after inactivity and wakes on the next request, which suits a
+portfolio endpoint better than an always-on container: the cold start is paid
+only when someone actually opens it.
 
 ---
 

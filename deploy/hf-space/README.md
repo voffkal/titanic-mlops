@@ -1,30 +1,28 @@
 ---
-title: Titanic Survival API
+title: Titanic Survival
 emoji: 🚢
 colorFrom: blue
 colorTo: gray
-sdk: docker
-app_port: 8002
+sdk: gradio
+sdk_version: 5.49.1
+app_file: app.py
 pinned: false
 license: mit
 ---
 
 # Titanic Survival API
 
-FastAPI service over a six-model stack trained on the Kaggle Titanic dataset.
-Source, method and measurements: **https://github.com/voffkal/titanic-mlops**
+A six-model stack trained on the 891 labelled passengers of the Kaggle Titanic
+dataset. Source, method and measurements:
+**https://github.com/voffkal/titanic-mlops**
 
-Interactive docs are at [`/docs`](/docs).
+The artifact is downloaded from that repository's GitHub release at startup, so
+what answers here is the same binary the leaderboard score belongs to, not a
+rebuild of it.
 
-```bash
-curl -s $SPACE_URL/api/v1/predict -H 'content-type: application/json' -d '{"inputs":[
-  {"Pclass":1,"Name":"Cumings, Mrs. John Bradley","Sex":"female","Age":38,
-   "SibSp":1,"Parch":0,"Ticket":"PC 17599","Fare":71.2833,"Cabin":"C85","Embarked":"C"}
-]}'
-```
-
-Field names are the Kaggle ones, so a row of `test.csv` posts unchanged.
-`Pclass`, `Name`, `Sex`, `SibSp` and `Parch` are required; the rest are imputed.
+Try the two women in the examples. Both travelled without a first-class cabin
+between them, and the model separates them 91% against 10% — because it knows
+what happened to the people they were travelling with.
 
 **Kaggle public leaderboard 0.79665** — 333 of 418 passengers, against 320 for
 the "all women survive" baseline. Cross-validated accuracy 0.8465 ±0.0184 over
