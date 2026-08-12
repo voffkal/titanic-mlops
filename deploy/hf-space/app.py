@@ -7,6 +7,8 @@ what answers on the Space is the same binary the leaderboard score belongs to.
 from __future__ import annotations
 
 import os
+import re
+import traceback
 import urllib.request
 from functools import lru_cache
 from pathlib import Path
@@ -20,10 +22,11 @@ from titanic_model.features import TitleFeature
 from titanic_model.predict import make_prediction
 
 RELEASE = f"https://github.com/voffkal/titanic-mlops/releases/download/model-v{__version__}"
-ARTIFACTS = Path(os.environ.get("ARTIFACTS_DIR", "artifacts"))
+ARTIFACTS = Path(os.environ.get("ARTIFACTS_DIR", "/tmp/titanic-artifacts"))
 ASSETS = [f"titanic_model-{__version__}.joblib", "input_schema.json", "metrics.json"]
 
 SEX_RULE = 0.76555  # "all women survive" on the public leaderboard
+TITLE = re.compile(r",\s*[^.]+\.")  # the API rejects a title-less name; so does this
 
 
 # ZeroGPU refuses to start a Space that declares no @spaces.GPU function, and the
@@ -69,24 +72,38 @@ def companions(record: dict) -> str:
 def predict(pclass, sex, name, sibsp, parch, age, fare, ticket, cabin, embarked):
     record = {
         "pclass": int(pclass),
-        "name": name.strip(),
+        "name": (name or "").strip(),
         "sex": sex,
-        "sibsp": int(sibsp),
-        "parch": int(parch),
+        "sibsp": int(sibsp or 0),   # a cleared Number field arrives as None
+        "parch": int(parch or 0),
         "age": age or None,
         "fare": fare or None,
         "ticket": ticket.strip() or None,
         "cabin": cabin.strip() or None,
         "embarked": embarked or None,
     }
+    if not TITLE.search(record["name"]):
+        return "—", (
+            "**Rejected:** expected the Kaggle format `Surname, Title. Given names`. "
+            "The title is a feature, and without one the model answers out of distribution."
+        )
+
     try:
         result = make_prediction([record], artifacts_dir=fetch_artifacts())
     except ValueError as exc:
         return "—", f"**Rejected:** {exc}"
+    except Exception as exc:  # surfaced rather than raised: a toast saying "Error" is useless
+        traceback.print_exc()
+        return "—", f"**{type(exc).__name__}:** {exc}"
 
     p = result["probabilities"][0]
     verdict = "survives" if result["predictions"][0] else "does not survive"
-    return f"{p:.1%}", f"The model says this passenger **{verdict}**.\n\n{companions(record)}"
+    try:
+        note = companions(record)
+    except Exception as exc:  # the group lookup is a nicety, not the answer
+        traceback.print_exc()
+        note = f"(companion lookup unavailable: {type(exc).__name__})"
+    return f"{p:.1%}", f"The model says this passenger **{verdict}**.\n\n{note}"
 
 
 EXAMPLES = [
@@ -147,6 +164,11 @@ with gr.Blocks(title="Titanic Survival") as demo:
         """
     )
 
-if __name__ == "__main__":
+try:  # at import, so a download failure lands in the Space log instead of a click
     fetch_artifacts()
+    print(f"artifacts ready in {ARTIFACTS}: {sorted(p.name for p in ARTIFACTS.iterdir())}", flush=True)
+except Exception:
+    traceback.print_exc()
+
+if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
