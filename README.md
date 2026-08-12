@@ -1,4 +1,4 @@
-# titanic-mlops
+# Titanic prediction
 
 Survival classification on the Kaggle Titanic dataset: a slot-based
 preprocessing pipeline, eight frozen model configs, a six-model stack, and a
@@ -8,6 +8,7 @@ The project grew out of the research notebook `workbook/Titanic_code.ipynb`
 (~70,000 hyperparameter-search fits). Those searches are not repeated here —
 their winners are frozen in `builders.py`.
 
+Play with predictions: https://huggingface.co/spaces/voffkal/titanic-ap
 ---
 
 ## Quick start
@@ -671,7 +672,7 @@ api/
 workbook/            out of git: notebooks, data, experiment notes, search runs
 ```
 
-Hardware: MacBook Pro M5 Max, 48 GB. MLX runs on Metal; `mlx` wheels exist for
+Hardware: MacBook Apple Silicon. MLX runs on Metal; `mlx` wheels exist for
 linux/amd64 (glibc ≥ 2.35, i.e. bookworm or ubuntu 22.04+), but Metal is not
 available there — inference falls back to CPU, which is immaterial for a
 network of three matrix multiplications.
