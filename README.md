@@ -582,12 +582,22 @@ portfolio endpoint better than an always-on container: the cold start is paid
 only when someone actually opens it.
 
 `requirements.txt` pins every library to the version in the artifact's own
-manifest, and `app.py` checks them at startup. Declaring ranges is not enough:
-the Space image ships some of these already, pip leaves the older one in place
-when the range is satisfied, and an artifact unpickled into different pandas
-StringDtype semantics fails on every prediction with a `NotImplementedError`
-that never mentions versions. The API has refused to start on version skew from
-the beginning; the Space now does the same.
+manifest, and `app.py` checks them at startup, refusing to run when pandas,
+numpy or scikit-learn differ. The API has refused to start on version skew from
+the beginning; the Space now does the same, because it needed to.
+
+Declaring ranges is not enough. Gradio 5 caps `pandas<3.0` while the artifact
+was pickled under 3.0.5, so the first build quietly downgraded pandas, the group
+statistics unpickled into different `StringDtype` semantics, and every
+prediction failed with a `NotImplementedError` naming neither pandas nor a
+version. Pinning turned that into an honest build error — a resolver conflict
+stating the cap outright — which is what pointed at `sdk_version: 6.23.1`,
+the first Gradio that allows `pandas<4.0`.
+
+**A model artifact carries its environment with it.** Pickles hold objects whose
+layout belongs to the library that wrote them, so anything that hosts the
+artifact has to reproduce the versions in its manifest rather than merely
+satisfy the ranges its package declares.
 
 Free Gradio Spaces run on ZeroGPU, which **refuses to start a Space that declares
 no `@spaces.GPU` function** — undocumented, and only discovered by deploying. So
