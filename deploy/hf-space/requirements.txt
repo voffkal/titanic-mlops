@@ -2,8 +2,25 @@
 # start a Space that declares no @spaces.GPU function, and the free Gradio tier
 # offers only ZeroGPU. app.py declares one that is never called — see the comment
 # there for why the real prediction is not the one decorated.
+
 # The model package is installed straight from the tag its artifact was released
 # from, so __version__ matches the joblib filename app.py downloads.
 titanic-model @ git+https://github.com/voffkal/titanic-mlops.git@model-v0.2.0#subdirectory=model
 gradio>=5.0
 spaces>=0.30
+
+# Pinned to the versions recorded in the artifact's own manifest. The package
+# declares ranges, and the Space image ships some of these already — pip then
+# leaves an older pandas in place, the artifact unpickles into different
+# StringDtype semantics, and every prediction dies with a NotImplementedError
+# that says nothing about versions. app.py checks these at startup.
+category-encoders==2.10.0
+feature-engine==1.9.4
+imbalanced-learn==0.14.2
+joblib==1.5.3
+numpy==2.5.2
+pandas==3.0.5
+scikit-learn==1.7.2
+scipy==1.18.0
+xgboost==3.4.0
+mlx[cpu]==0.32.0

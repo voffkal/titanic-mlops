@@ -48,6 +48,34 @@ def fetch_artifacts() -> Path:
     return ARTIFACTS
 
 
+def check_versions() -> None:
+    """The API refuses to start on version skew; so does this, and for the same
+    reason. A pandas that merely satisfies the range unpickles the artifact into
+    different StringDtype semantics and fails on every prediction with a message
+    that never mentions versions."""
+    import importlib.metadata as md
+    import json
+
+    trained = json.loads((ARTIFACTS / "metrics.json").read_text())["libraries"]
+    rows, skew = [], []
+    for name, want in sorted(trained.items()):
+        try:
+            got = md.version(name)
+        except md.PackageNotFoundError:
+            got = "missing"
+        rows.append(f"  {name:18s} trained {want:10s} running {got}")
+        if got != want:
+            skew.append(f"{name}: trained {want}, running {got}")
+
+    print("library versions against the artifact's manifest:", *rows, sep="\n", flush=True)
+    critical = [s for s in skew if s.split(":")[0] in {"pandas", "numpy", "scikit-learn"}]
+    if critical:
+        raise RuntimeError(
+            "version skew on libraries that decide how the artifact unpickles: "
+            + "; ".join(critical)
+        )
+
+
 @lru_cache(maxsize=1)
 def group_lookup():
     """The fitted GroupSurvival out of the artifact, loaded once rather than per call."""
@@ -164,11 +192,13 @@ with gr.Blocks(title="Titanic Survival") as demo:
         """
     )
 
-try:  # at import, so a download failure lands in the Space log instead of a click
+try:  # at import, so a failure lands in the Space log instead of on a click
     fetch_artifacts()
     print(f"artifacts ready in {ARTIFACTS}: {sorted(p.name for p in ARTIFACTS.iterdir())}", flush=True)
+    check_versions()
 except Exception:
     traceback.print_exc()
+    raise
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))

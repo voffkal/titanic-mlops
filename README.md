@@ -581,6 +581,14 @@ A free Space sleeps after inactivity and wakes on the next request, which suits 
 portfolio endpoint better than an always-on container: the cold start is paid
 only when someone actually opens it.
 
+`requirements.txt` pins every library to the version in the artifact's own
+manifest, and `app.py` checks them at startup. Declaring ranges is not enough:
+the Space image ships some of these already, pip leaves the older one in place
+when the range is satisfied, and an artifact unpickled into different pandas
+StringDtype semantics fails on every prediction with a `NotImplementedError`
+that never mentions versions. The API has refused to start on version skew from
+the beginning; the Space now does the same.
+
 Free Gradio Spaces run on ZeroGPU, which **refuses to start a Space that declares
 no `@spaces.GPU` function** — undocumented, and only discovered by deploying. So
 `app.py` declares one that is never called. The real prediction stays undecorated
