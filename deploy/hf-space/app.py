@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import os
 import urllib.request
+from functools import lru_cache
 from pathlib import Path
 
 import gradio as gr
 import pandas as pd
+import spaces
 
 from titanic_model import __version__
 from titanic_model.features import TitleFeature
@@ -24,6 +26,16 @@ ASSETS = [f"titanic_model-{__version__}.joblib", "input_schema.json", "metrics.j
 SEX_RULE = 0.76555  # "all women survive" on the public leaderboard
 
 
+# ZeroGPU refuses to start a Space that declares no @spaces.GPU function, and the
+# free Gradio tier offers only ZeroGPU. This satisfies that check and is never
+# called: the model is sklearn and runs on the CPU, so putting the decorator on
+# the real prediction would queue for a GPU and spend the daily quota — which is
+# consumed only inside decorated functions — to run a logistic regression.
+@spaces.GPU(duration=1)
+def _gpu_probe() -> str:
+    return "the model runs on CPU"
+
+
 def fetch_artifacts() -> Path:
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     for name in ASSETS:
@@ -33,12 +45,18 @@ def fetch_artifacts() -> Path:
     return ARTIFACTS
 
 
-def companions(record: dict) -> str:
-    """What the model knows about this passenger's group, which is its whole edge."""
+@lru_cache(maxsize=1)
+def group_lookup():
+    """The fitted GroupSurvival out of the artifact, loaded once rather than per call."""
     import joblib
 
     model = joblib.load(ARTIFACTS / f"titanic_model-{__version__}.joblib")
-    fitted = model.estimators_[0].named_steps["group_feats"]
+    return model.estimators_[0].named_steps["group_feats"]
+
+
+def companions(record: dict) -> str:
+    """What the model knows about this passenger's group, which is its whole edge."""
+    fitted = group_lookup()
     frame = TitleFeature().fit_transform(pd.DataFrame([record]))
     out = fitted.transform(frame)
 

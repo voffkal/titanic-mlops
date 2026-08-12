@@ -1,8 +1,9 @@
-# The free Gradio tier runs on ZeroGPU hardware. Nothing here touches the GPU —
-# the model is sklearn on the CPU — so no `spaces` package and no @spaces.GPU
-# decorator: decorating would allocate a GPU for a logistic regression and burn
-# the daily quota for nothing. Quota is only consumed inside decorated functions.
+# `spaces` is required even though nothing here uses a GPU: ZeroGPU refuses to
+# start a Space that declares no @spaces.GPU function, and the free Gradio tier
+# offers only ZeroGPU. app.py declares one that is never called — see the comment
+# there for why the real prediction is not the one decorated.
 # The model package is installed straight from the tag its artifact was released
 # from, so __version__ matches the joblib filename app.py downloads.
 titanic-model @ git+https://github.com/voffkal/titanic-mlops.git@model-v0.2.0#subdirectory=model
 gradio>=5.0
+spaces>=0.30

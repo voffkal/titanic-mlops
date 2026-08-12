@@ -581,10 +581,11 @@ A free Space sleeps after inactivity and wakes on the next request, which suits 
 portfolio endpoint better than an always-on container: the cold start is paid
 only when someone actually opens it.
 
-Free Gradio Spaces run on ZeroGPU hardware, and nothing here asks for the GPU —
-the model is sklearn on the CPU. So no `spaces` package and no `@spaces.GPU`
-decorator: the daily GPU quota is only consumed inside decorated functions, and
-decorating would allocate an RTX Pro 6000 to run a logistic regression.
+Free Gradio Spaces run on ZeroGPU, which **refuses to start a Space that declares
+no `@spaces.GPU` function** — undocumented, and only discovered by deploying. So
+`app.py` declares one that is never called. The real prediction stays undecorated
+on purpose: quota is consumed only inside decorated functions, and putting the
+decorator there would queue for an RTX Pro 6000 to run a logistic regression.
 
 ---
 
