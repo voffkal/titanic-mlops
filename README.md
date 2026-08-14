@@ -8,7 +8,8 @@ The project grew out of the research notebook `workbook/Titanic_code.ipynb`
 (~70,000 hyperparameter-search fits). Those searches are not repeated here —
 their winners are frozen in `builders.py`.
 
-Play with predictions: https://huggingface.co/spaces/voffkal/titanic-ap
+Play with predictions: [huggingface.co/spaces/voffkal/titanic-ap](https://huggingface.co/spaces/voffkal/titanic-ap)
+
 ---
 
 ## Quick start
