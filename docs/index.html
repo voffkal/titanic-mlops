@@ -1,0 +1,866 @@
+<title>Тринадцать пассажиров</title>
+<style>
+  :root {
+    --paper:      #EDF0F3;
+    --surface:    #F8F9FB;
+    --ink:        #0F1A26;
+    --ink-soft:   #52616F;
+    --rule:       #D2D9E1;
+    --brass:      #A56E1F;
+    --deep:       #2A4055;
+    --sea:        #24645F;
+    --grid:       #E2E7ED;
+    --women:      #A8446A;
+    --men:        #3F6386;
+    --sky:        #DCE3EA;
+
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --body: "Avenir Next", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+    --measure: 34rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:    #0A131E;
+      --surface:  #101C29;
+      --ink:      #E7ECF2;
+      --ink-soft: #93A3B4;
+      --rule:     #1D2C3D;
+      --brass:    #D9A253;
+      --deep:     #7D95AD;
+      --sea:      #5AA8A4;
+      --grid:     #172534;
+      --women:    #E58CAB;
+      --men:      #7FA9CE;
+      --sky:      #101E2C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:    #0A131E;
+    --surface:  #101C29;
+    --ink:      #E7ECF2;
+    --ink-soft: #93A3B4;
+    --rule:     #1D2C3D;
+    --brass:    #D9A253;
+    --deep:     #7D95AD;
+    --sea:      #5AA8A4;
+    --grid:     #172534;
+    --women:    #E58CAB;
+    --men:      #7FA9CE;
+    --sky:      #101E2C;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+
+  /* ---------- language ---------- */
+  .langbar { display: flex; justify-content: flex-end; gap: 1px; margin-bottom: 0.6rem; }
+  .langbar button {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--rule);
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+  }
+  .langbar button[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-soft); }
+  .langbar button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .hero-text[data-lang], .wrap[data-lang] { display: none; }
+  .hero-text[data-lang].on { display: block; }
+  .wrap[data-lang].on { display: flex; }
+
+  /* ---------- hero ---------- */
+  .hero { background: var(--sky); border-bottom: 1px solid var(--rule); }
+  .hero-inner {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: clamp(1.75rem, 4vw, 3rem) clamp(1.1rem, 5vw, 2rem) 0;
+  }
+  .ship { display: block; width: 100%; height: auto; color: var(--ink); }
+  .hero-text {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 0 clamp(1.1rem, 5vw, 2rem) clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .wrap {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: clamp(2.25rem, 5vw, 3.5rem) clamp(1.1rem, 5vw, 2rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.75rem, 5vw, 4rem);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(2.6rem, 1.6rem + 4.4vw, 4.4rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin: 0.55rem 0 0;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+    line-height: 1.18;
+    text-wrap: balance;
+    margin: 0 0 0.9rem;
+  }
+
+  p { margin: 0 0 1rem; max-width: var(--measure); }
+  p:last-child { margin-bottom: 0; }
+
+  .standfirst {
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 1rem + 0.6vw, 1.3rem);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 30rem;
+    margin-top: 0.85rem;
+  }
+
+  strong { font-weight: 650; color: var(--ink); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------- figures ---------- */
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 1.75rem;
+  }
+  .fig { background: var(--surface); padding: 1.1rem 1.15rem; }
+  .fig dt {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .fig dd {
+    margin: 0.35rem 0 0;
+    font-family: var(--display);
+    font-size: 2rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .fig .unit { font-size: 0.9rem; color: var(--ink-soft); font-family: var(--body); }
+
+  section { border-top: 1px solid var(--rule); padding-top: clamp(1.75rem, 3vw, 2.5rem); }
+  section:first-child { border-top: 0; padding-top: 0; }
+  section > .eyebrow { margin-bottom: 0.6rem; }
+
+  /* ---------- charts ---------- */
+  figure { margin: 1.75rem 0 0; }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 0.9rem;
+    max-width: var(--measure);
+  }
+  .chart { display: flex; flex-direction: column; gap: 0.55rem; }
+  .row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr 3rem;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .row .label { font-size: 0.85rem; color: var(--ink-soft); }
+  .track { background: var(--grid); height: 1.55rem; }
+  .bar { height: 100%; background: var(--deep); }
+  .bar.up { background: var(--brass); }
+  .bar.women { background: var(--women); }
+  .bar.men { background: var(--men); }
+  .row .val {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .group-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 1.1rem 0 0.15rem;
+  }
+  .group-title:first-child { margin-top: 0; }
+
+  /* ---------- timeline ---------- */
+  .timeline { margin: 1.75rem 0 0; display: flex; flex-direction: column; }
+  .moment {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 1.1rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .moment:last-child { border-bottom: 1px solid var(--rule); }
+  .when {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--brass);
+  }
+  .what { margin: 0; max-width: none; }
+
+  /* ---------- manifest ---------- */
+  .manifest {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    margin: 1.75rem 0 0;
+    overflow-x: auto;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  caption {
+    text-align: left;
+    padding: 0.85rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
+  }
+  th, td { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid var(--rule); }
+  tbody tr:last-child td { border-bottom: 0; }
+  th {
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  td.fate { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-soft); white-space: nowrap; }
+
+  /* ---------- scoreboard ---------- */
+  .score {
+    margin: 1.75rem 0 0;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .score-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.95rem 1.15rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .score-row:last-child { border-bottom: 0; }
+  .score-row.total { background: var(--paper); }
+  .score-name { font-size: 0.95rem; color: var(--ink-soft); }
+  .score-row.total .score-name { color: var(--ink); font-weight: 650; }
+  .score-val {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.15rem;
+  }
+  .score-val small { font-size: 0.8rem; color: var(--ink-soft); }
+  .score-row.total .score-val { color: var(--brass); font-size: 1.5rem; }
+
+  /* ---------- 33 спора ---------- */
+  .arena { margin: 1.75rem 0 0; }
+  .tallies {
+    display: grid;
+    grid-template-columns: repeat(33, 1fr);
+    gap: 3px;
+    margin-bottom: 0.7rem;
+  }
+  .tally { height: 2.6rem; background: var(--brass); }
+  .tally.miss { background: var(--grid); border: 1px solid var(--rule); }
+  .arena-legend {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+  .arena-legend b { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+  @media (max-width: 30rem) {
+    .tallies { grid-template-columns: repeat(11, 1fr); }
+    .tally { height: 1.9rem; }
+  }
+
+  .pull {
+    font-family: var(--display);
+    font-size: clamp(1.25rem, 1rem + 1.1vw, 1.65rem);
+    line-height: 1.35;
+    border-left: 2px solid var(--brass);
+    padding-left: 1.15rem;
+    margin: 1.75rem 0 0;
+    max-width: 30rem;
+    text-wrap: balance;
+  }
+
+  .caveat {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 1.25rem 1.35rem;
+    margin-top: 1.5rem;
+  }
+  .caveat p { max-width: none; }
+
+  .payoff {
+    font-family: var(--display);
+    font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+    line-height: 1.08;
+    margin: 0 0 0.75rem;
+    max-width: 22rem;
+    text-wrap: balance;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+  }
+  a { color: var(--sea); text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+</style>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="langbar">
+      <button type="button" data-set="en" aria-pressed="true">English</button>
+      <button type="button" data-set="ru" aria-pressed="false">Русский</button>
+    </div>
+    <svg class="ship" viewBox="0 0 1000 250" role="img" aria-labelledby="ship-title">
+      <title id="ship-title">Профиль парохода «Титаник»: четыре трубы, две мачты, шлюпки вдоль шлюпочной палубы</title>
+
+      <!-- дым из трёх труб: четвёртая была фальшивой, её ставили для вида и вентиляции -->
+      <g fill="currentColor" opacity="0.13">
+        <path d="M352 52 C 300 32, 236 26, 186 14 C 250 34, 306 42, 350 60 Z"/>
+        <path d="M442 52 C 390 34, 330 28, 282 17 C 344 36, 398 44, 440 60 Z"/>
+        <path d="M532 54 C 486 38, 430 32, 386 22 C 442 40, 490 48, 530 62 Z"/>
+      </g>
+
+      <!-- мачты и такелаж, под корпусом -->
+      <g fill="none" stroke="currentColor" stroke-linecap="round">
+        <path d="M206 156 L206 36" stroke-width="2.2"/>
+        <path d="M792 158 L792 48" stroke-width="2.2"/>
+        <path d="M88 150 L 206 38" stroke-width="0.9" opacity="0.5"/>
+        <path d="M206 40 L 792 50" stroke-width="0.9" opacity="0.5"/>
+        <path d="M792 50 L 930 168" stroke-width="0.9" opacity="0.5"/>
+      </g>
+
+      <!-- корпус: палуба проседает в середине и поднимается к обоим концам -->
+      <path fill="var(--sky)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"
+            d="M 84 148
+               Q 300 159 512 161
+               Q 730 159 936 152
+               L 936 174
+               Q 926 196 880 196
+               L 108 196
+               Q 86 190 84 168
+               Z"/>
+
+      <!-- шлюпочная палуба и надстройка -->
+      <g fill="var(--sky)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+        <path d="M 228 158 L 228 128 L 724 128 L 724 158"/>
+        <path d="M 318 128 L 318 112 L 662 112 L 662 128"/>
+        <path d="M 252 128 L 252 116 L 300 116 L 300 128"/>
+      </g>
+
+      <!-- ряд иллюминаторов -->
+      <path d="M 150 178 H 856" stroke="currentColor" stroke-width="1" opacity="0.35" stroke-dasharray="2 9"/>
+
+      <!-- четыре трубы с наклоном к корме -->
+      <g stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+        <path d="M346 112 L352 48 L382 48 L378 112 Z" fill="var(--brass)"/>
+        <path d="M351 60 L382 60 L381 48 L352 48 Z" fill="currentColor"/>
+        <path d="M436 112 L442 48 L472 48 L468 112 Z" fill="var(--brass)"/>
+        <path d="M441 60 L472 60 L471 48 L442 48 Z" fill="currentColor"/>
+        <path d="M526 112 L532 50 L562 50 L558 112 Z" fill="var(--brass)"/>
+        <path d="M531 62 L562 62 L561 50 L532 50 Z" fill="currentColor"/>
+        <path d="M616 112 L622 54 L652 54 L648 112 Z" fill="var(--brass)"/>
+        <path d="M621 66 L652 66 L651 54 L622 54 Z" fill="currentColor"/>
+      </g>
+
+      <!-- шлюпки: их было двадцать, ровно на половину людей -->
+      <g fill="var(--brass)" stroke="currentColor" stroke-width="1">
+        <rect x="240" y="119" width="24" height="8" rx="4"/>
+        <rect x="272" y="119" width="24" height="8" rx="4"/>
+        <rect x="688" y="119" width="24" height="8" rx="4"/>
+        <rect x="656" y="119" width="24" height="8" rx="4"/>
+      </g>
+
+      <!-- вода -->
+      <g stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.28">
+        <path d="M24 208 H 976"/>
+        <path d="M70 222 H 430"/>
+        <path d="M486 222 H 906"/>
+        <path d="M132 236 H 352"/>
+        <path d="M412 236 H 652"/>
+        <path d="M712 236 H 884"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero-text" data-lang="en">
+    <p class="eyebrow">Southampton — New York · April 1912</p>
+    <h1>Titanic</h1>
+    <p class="standfirst">What happened that night — and whether a line in a passenger list is enough, a century on, to guess a stranger's fate.</p>
+  </div>
+  <div class="hero-text" data-lang="ru">
+    <p class="eyebrow">Саутгемптон — Нью-Йорк · апрель 1912</p>
+    <h1>«Титаник»</h1>
+    <p class="standfirst">Что случилось той ночью — и можно ли теперь, век спустя, угадать чужую судьбу по строчке в судовом списке.</p>
+  </div>
+</div>
+
+<div class="wrap" data-lang="en">
+
+  <section>
+    <p class="eyebrow">What happened</p>
+    <h2>Four days, and two hours and forty minutes</h2>
+    <p>The largest passenger ship of her day left Southampton for New York on her maiden voyage. She never reached America.</p>
+
+    <div class="timeline">
+      <div class="moment">
+        <span class="when">10 April</span>
+        <p class="what"><strong>She sails.</strong> Southampton, then Cherbourg and Queenstown — the last stop before the Atlantic.</p>
+      </div>
+      <div class="moment">
+        <span class="when">14 April, 23:40</span>
+        <p class="what"><strong>The iceberg.</strong> A glancing blow along the starboard side opens the hull below the waterline.</p>
+      </div>
+      <div class="moment">
+        <span class="when">15 April, 02:20</span>
+        <p class="what"><strong>She goes under.</strong> Two hours and forty minutes from the impact to the last moment. Of roughly 2,200 people aboard, about 710 were saved.</p>
+      </div>
+      <div class="moment">
+        <span class="when">1914</span>
+        <p class="what"><strong>The SOLAS convention.</strong> Lifeboats for everyone aboard, a round-the-clock radio watch, an ice patrol across the North Atlantic.</p>
+      </div>
+    </div>
+
+    <p class="pull">Twenty lifeboats held 1,178 people — about half of those on board. The rules of the day were satisfied: they were written against the ship's tonnage, not the number of people on her.</p>
+
+    <p style="margin-top:1.4rem">Even that half went unused: in the rush, boats were lowered half empty. What often decided a life was not who you were but whether you stood at the right rail during the right twenty minutes. Nothing of that goes into a ship's book — and that is where the line runs, past which no calculation will pass.</p>
+
+    <dl class="figures">
+      <div class="fig"><dt>Fate known</dt><dd>891</dd></div>
+      <div class="fig"><dt>To be predicted</dt><dd>418</dd></div>
+      <div class="fig"><dt>Survived among them</dt><dd>38<span class="unit">&thinsp;%</span></dd></div>
+    </dl>
+    <p style="margin-top:0.9rem; font-size:0.85rem; color:var(--ink-soft); max-width:var(--measure)">The passenger lists hold 1,309 names. The crew, some nine hundred more, is not among them.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">First question</p>
+    <h2>Did "women and children first" actually hold?</h2>
+    <p>It did. Of 314 women, 233 came through; of 577 men, 109. The gap is wide enough to see without any statistics.</p>
+
+    <figure>
+      <div class="chart">
+        <div class="row">
+          <span class="label">Women</span>
+          <div class="track"><div class="bar women" style="width:74%"></div></div>
+          <span class="val">74 %</span>
+        </div>
+        <div class="row">
+          <span class="label">Men</span>
+          <div class="track"><div class="bar men" style="width:19%"></div></div>
+          <span class="val">19 %</span>
+        </div>
+      </div>
+      <figcaption>Share who survived. The plain rule "every woman is saved" gets 320 fates right out of 418 — that is where the count begins.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Second question</p>
+    <h2>Whom did it fail?</h2>
+    <p>Third-class women. On the upper decks the rule held almost perfectly: in first class, ninety-seven women in a hundred were saved. Below, it turned into a coin toss.</p>
+
+    <figure>
+      <div class="chart">
+        <p class="group-title">Women</p>
+        <div class="row">
+          <span class="label">1st class</span>
+          <div class="track"><div class="bar women" style="width:97%"></div></div>
+          <span class="val">97 %</span>
+        </div>
+        <div class="row">
+          <span class="label">2nd class</span>
+          <div class="track"><div class="bar women" style="width:92%"></div></div>
+          <span class="val">92 %</span>
+        </div>
+        <div class="row">
+          <span class="label">3rd class</span>
+          <div class="track"><div class="bar women" style="width:50%"></div></div>
+          <span class="val">50 %</span>
+        </div>
+
+        <p class="group-title">Men</p>
+        <div class="row">
+          <span class="label">1st class</span>
+          <div class="track"><div class="bar men" style="width:37%"></div></div>
+          <span class="val">37 %</span>
+        </div>
+        <div class="row">
+          <span class="label">2nd class</span>
+          <div class="track"><div class="bar men" style="width:16%"></div></div>
+          <span class="val">16 %</span>
+        </div>
+        <div class="row">
+          <span class="label">3rd class</span>
+          <div class="track"><div class="bar men" style="width:14%"></div></div>
+          <span class="val">14 %</span>
+        </div>
+      </div>
+      <figcaption>Share who survived, by class and sex. The 144 third-class women split exactly in half — here sex decides nothing.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Third question</p>
+    <h2>What decided a life where sex did not?</h2>
+    <p>Family. People were saved and lost in groups. If a third-class woman's companions died, she had <strong>16&nbsp;%</strong> left. If they lived, so did she — sixteen cases out of sixteen.</p>
+
+    <figure>
+      <div class="chart">
+        <div class="row">
+          <span class="label">Companions lost</span>
+          <div class="track"><div class="bar" style="width:16%"></div></div>
+          <span class="val">16 %</span>
+        </div>
+        <div class="row">
+          <span class="label">Companions saved</span>
+          <div class="track"><div class="bar up" style="width:100%"></div></div>
+          <span class="val">100 %</span>
+        </div>
+      </div>
+      <figcaption>Third-class women who had family aboard: 56 in the first group, 16 in the second.</figcaption>
+    </figure>
+
+    <p class="pull">Among the large families, nine were lost entirely. One came through whole.</p>
+
+    <div class="manifest">
+      <table>
+        <caption>The Sage family — seven of them in our data</caption>
+        <thead>
+          <tr><th scope="col">Passenger</th><th scope="col">Fate</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Frederick Sage</td><td class="fate">lost</td></tr>
+          <tr><td>George John, junior</td><td class="fate">lost</td></tr>
+          <tr><td>Douglas Bullen</td><td class="fate">lost</td></tr>
+          <tr><td>Constance Gladys</td><td class="fate">lost</td></tr>
+          <tr><td>Stella Anna</td><td class="fate">lost</td></tr>
+          <tr><td>Dorothy Edith</td><td class="fate">lost</td></tr>
+          <tr><td>Thomas Henry, a boy</td><td class="fate">lost</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:0.9rem">Dorothy Sage travelled third class with her father and five brothers and sisters. She was fourteen. On age and sex the model would give her about a half — it gives <strong>10&nbsp;%</strong>, because it knows what became of the others.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Fourth question</p>
+    <h2 class="payoff">Thirteen passengers</h2>
+    <p>That is how many the model gets right beyond the plain rule. It argues rarely — <strong>33 times</strong> out of 418, only where it has grounds — and is right in <strong>23</strong> of them.</p>
+
+    <div class="score">
+      <div class="score-row">
+        <span class="score-name">The rule "every woman is saved"</span>
+        <span class="score-val">320 <small>of 418</small></span>
+      </div>
+      <div class="score-row">
+        <span class="score-name">The model</span>
+        <span class="score-val">333 <small>of 418</small></span>
+      </div>
+      <div class="score-row total">
+        <span class="score-name">Difference</span>
+        <span class="score-val">+13</span>
+      </div>
+    </div>
+
+    <div class="arena">
+      <p class="eyebrow" style="margin-bottom:0.7rem">All 33 cases where the model argues with the rule</p>
+      <div class="tallies" data-tallies aria-hidden="true"></div>
+      <div class="arena-legend">
+        <span><b>23</b> hits</span>
+        <span><b>10</b> misses</span>
+      </div>
+    </div>
+
+    <p style="margin-top:1.4rem">On the other 385 passengers the model and the rule say the same thing. The whole argument sits in these thirty-three, and it is won 23 to 10. We do not mark our own work: the answers are held by Kaggle, an international data-science contest platform, and predictions go there blind.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Fifth question</p>
+    <h2>How far can you trust this?</h2>
+    <div class="caveat">
+      <p>Across 418 people the random spread runs to <strong>about eight passengers</strong> either way. So a difference of two or three between two models tells you nothing: luck made it, not quality.</p>
+      <p style="margin-bottom:0">Thirteen sits well past that threshold — it can be trusted. Promising another twenty on the same data would be a lie: beyond this point lies what the lists never recorded.</p>
+    </div>
+    <p style="margin-top:1.4rem">We went through tens of thousands of variants, tried eight different methods and combined them with one another. One thing worked — <strong>the fate of a passenger's companions</strong>; everything else stayed inside chance. Beyond sex and class, the machine found only that people stayed together that night.</p>
+  </section>
+
+  <footer>
+    <p style="margin-bottom:0.4rem">Data: the open Kaggle "Titanic" set — 891 passengers with a known fate, 418 to predict. Historical detail from Britannica, Royal Museums Greenwich and Encyclopedia Titanica.</p>
+    <p style="margin-bottom:0">Live demo and the full method: <a href="https://github.com/voffkal/titanic-mlops">github.com/voffkal/titanic-mlops</a></p>
+  </footer>
+</div>
+
+<div class="wrap" data-lang="ru">
+
+  <section>
+    <p class="eyebrow">Что произошло</p>
+    <h2>Четыре дня и два часа сорок минут</h2>
+    <p>Крупнейший пассажирский пароход своего времени вышел в первый рейс из Саутгемптона в Нью-Йорк. До Америки он не дошёл.</p>
+
+    <div class="timeline">
+      <div class="moment">
+        <span class="when">10 апреля</span>
+        <p class="what"><strong>Выход в море.</strong> Саутгемптон, затем Шербур и Квинстаун — последняя стоянка перед Атлантикой.</p>
+      </div>
+      <div class="moment">
+        <span class="when">14 апреля, 23:40</span>
+        <p class="what"><strong>Айсберг.</strong> Удар вскользь по правому борту вспарывает обшивку ниже ватерлинии.</p>
+      </div>
+      <div class="moment">
+        <span class="when">15 апреля, 02:20</span>
+        <p class="what"><strong>Судно уходит под воду.</strong> От удара до последней минуты — два часа сорок минут. Из примерно 2200 человек спаслись около 710.</p>
+      </div>
+      <div class="moment">
+        <span class="when">1914</span>
+        <p class="what"><strong>Конвенция SOLAS.</strong> Шлюпок — на всех без исключения, круглосуточная радиовахта, ледовый патруль в Северной Атлантике.</p>
+      </div>
+    </div>
+
+    <p class="pull">Двадцать шлюпок вмещали 1178 человек — примерно половину тех, кто был на борту. Правилам того времени это соответствовало: их писали по тоннажу судна, а не по числу людей на нём.</p>
+
+    <p style="margin-top:1.4rem">Даже этой половиной не воспользовались: в спешке шлюпки спускали полупустыми. Часто решало не то, кем человек был, а то, оказался ли он у нужного борта в нужные двадцать минут. Такое не заносят в судовые книги — и здесь проходит граница, дальше которой не пройдёт никакой расчёт.</p>
+
+    <dl class="figures">
+      <div class="fig"><dt>Известна судьба</dt><dd>891</dd></div>
+      <div class="fig"><dt>Нужно предсказать</dt><dd>418</dd></div>
+      <div class="fig"><dt>Выжило из них</dt><dd>38<span class="unit">&thinsp;%</span></dd></div>
+    </dl>
+    <p style="margin-top:0.9rem; font-size:0.85rem; color:var(--ink-soft); max-width:var(--measure)">Списки пассажиров — 1309 человек. Команда парохода, ещё около девятисот, в них не входит.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Вопрос первый</p>
+    <h2>Правило «женщины и дети вперёд» — оно вообще соблюдалось?</h2>
+    <p>Соблюдалось. Из 314 женщин уцелели 233, из 577 мужчин — 109. Разрыв такой, что его видно без всякой статистики.</p>
+
+    <figure>
+      <div class="chart">
+        <div class="row">
+          <span class="label">Женщины</span>
+          <div class="track"><div class="bar women" style="width:74%"></div></div>
+          <span class="val">74 %</span>
+        </div>
+        <div class="row">
+          <span class="label">Мужчины</span>
+          <div class="track"><div class="bar men" style="width:19%"></div></div>
+          <span class="val">19 %</span>
+        </div>
+      </div>
+      <figcaption>Доля выживших. Простое правило «все женщины спасаются» угадывает 320 судеб из 418 — с него и начинается отсчёт.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Вопрос второй</p>
+    <h2>Для кого оно сломалось?</h2>
+    <p>Для женщин третьего класса. Наверху правило держалось почти безупречно: в первом классе спаслись девяносто семь из ста. Внизу оно превратилось в подбрасывание монеты.</p>
+
+    <figure>
+      <div class="chart">
+        <p class="group-title">Женщины</p>
+        <div class="row">
+          <span class="label">1 класс</span>
+          <div class="track"><div class="bar women" style="width:97%"></div></div>
+          <span class="val">97 %</span>
+        </div>
+        <div class="row">
+          <span class="label">2 класс</span>
+          <div class="track"><div class="bar women" style="width:92%"></div></div>
+          <span class="val">92 %</span>
+        </div>
+        <div class="row">
+          <span class="label">3 класс</span>
+          <div class="track"><div class="bar women" style="width:50%"></div></div>
+          <span class="val">50 %</span>
+        </div>
+
+        <p class="group-title">Мужчины</p>
+        <div class="row">
+          <span class="label">1 класс</span>
+          <div class="track"><div class="bar men" style="width:37%"></div></div>
+          <span class="val">37 %</span>
+        </div>
+        <div class="row">
+          <span class="label">2 класс</span>
+          <div class="track"><div class="bar men" style="width:16%"></div></div>
+          <span class="val">16 %</span>
+        </div>
+        <div class="row">
+          <span class="label">3 класс</span>
+          <div class="track"><div class="bar men" style="width:14%"></div></div>
+          <span class="val">14 %</span>
+        </div>
+      </div>
+      <figcaption>Доля выживших по классу и полу. 144 женщины третьего класса делятся ровно пополам — здесь пол уже ничего не решает.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Вопрос третий</p>
+    <h2>Что решало судьбу там, где пол не помогал?</h2>
+    <p>Родня. Спасались и гибли группами. Если спутники женщины из третьего класса погибли, у неё самой оставалось <strong>16&nbsp;%</strong>. Если спаслись — выживала и она: шестнадцать случаев из шестнадцати.</p>
+
+    <figure>
+      <div class="chart">
+        <div class="row">
+          <span class="label">Спутники погибли</span>
+          <div class="track"><div class="bar" style="width:16%"></div></div>
+          <span class="val">16 %</span>
+        </div>
+        <div class="row">
+          <span class="label">Спутники выжили</span>
+          <div class="track"><div class="bar up" style="width:100%"></div></div>
+          <span class="val">100 %</span>
+        </div>
+      </div>
+      <figcaption>Женщины третьего класса, у которых на борту была родня: 56 человек в первой группе, 16 во второй.</figcaption>
+    </figure>
+
+    <p class="pull">Среди больших семей девять погибли целиком. Полностью спаслась одна.</p>
+
+    <div class="manifest">
+      <table>
+        <caption>Семья Сейдж — семь человек в наших данных</caption>
+        <thead>
+          <tr><th scope="col">Пассажир</th><th scope="col">Судьба</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Фредерик Сейдж</td><td class="fate">погиб</td></tr>
+          <tr><td>Джордж Джон, младший</td><td class="fate">погиб</td></tr>
+          <tr><td>Дуглас Буллен</td><td class="fate">погиб</td></tr>
+          <tr><td>Констанция Глэдис</td><td class="fate">погибла</td></tr>
+          <tr><td>Стелла Анна</td><td class="fate">погибла</td></tr>
+          <tr><td>Дороти Эдит</td><td class="fate">погибла</td></tr>
+          <tr><td>Томас Генри, мальчик</td><td class="fate">погиб</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:0.9rem">Дороти Сейдж плыла третьим классом с отцом и пятью братьями и сёстрами. Ей было четырнадцать. По возрасту и полу модель дала бы ей примерно половину — а даёт <strong>10&nbsp;%</strong>, потому что знает, что стало с остальными.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Вопрос четвёртый</p>
+    <h2 class="payoff">Тринадцать пассажиров</h2>
+    <p>Столько человек модель угадывает сверх простого правила. Спорит она редко — <strong>33 раза</strong> на 418, только там, где есть основание, — и в <strong>23</strong> случаях оказывается права.</p>
+
+    <div class="score">
+      <div class="score-row">
+        <span class="score-name">Правило «все женщины спасаются»</span>
+        <span class="score-val">320 <small>из 418</small></span>
+      </div>
+      <div class="score-row">
+        <span class="score-name">Модель</span>
+        <span class="score-val">333 <small>из 418</small></span>
+      </div>
+      <div class="score-row total">
+        <span class="score-name">Разница</span>
+        <span class="score-val">+13</span>
+      </div>
+    </div>
+
+    <div class="arena">
+      <p class="eyebrow" style="margin-bottom:0.7rem">Все 33 случая, где модель спорит с правилом</p>
+      <div class="tallies" data-tallies aria-hidden="true"></div>
+      <div class="arena-legend">
+        <span><b>23</b> попадания</span>
+        <span><b>10</b> промахов</span>
+      </div>
+    </div>
+
+    <p style="margin-top:1.4rem">На остальных 385 пассажирах модель и правило говорят одно и то же. Весь спор — в этих тридцати трёх, и он выигран со счётом 23:10. Судим не сами: правильные ответы держит у себя Kaggle — международная площадка соревнований по работе с данными. Предсказания уходят туда вслепую.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Вопрос пятый</p>
+    <h2>Насколько этому можно верить?</h2>
+    <div class="caveat">
+      <p>На 418 людях случайный разброс — <strong>около восьми пассажиров</strong> в обе стороны. Значит, разница в два-три человека между двумя моделями не говорит ни о чём: её сделало везение, а не качество.</p>
+      <p style="margin-bottom:0">Тринадцать заметно больше этого порога — им верить можно. Обещать ещё двадцать на тех же данных было бы враньём: дальше начинается то, чего в списках нет.</p>
+    </div>
+    <p style="margin-top:1.4rem">Мы перебрали десятки тысяч вариантов, попробовали восемь разных методов и объединяли их между собой. Сработало одно — <strong>судьба спутников</strong>; всё прочее осталось в пределах случайности. Сверх пола и класса машина нашла только то, что люди в ту ночь держались вместе.</p>
+  </section>
+
+  <footer>
+    <p style="margin-bottom:0.4rem">Данные: открытый набор Kaggle «Titanic» — 891 пассажир с известной судьбой, 418 для предсказания. Исторические сведения — Britannica, Royal Museums Greenwich, Encyclopedia Titanica.</p>
+    <p style="margin-bottom:0">Живое демо и полный разбор метода: <a href="https://github.com/voffkal/titanic-mlops">github.com/voffkal/titanic-mlops</a></p>
+  </footer>
+</div>
+
+<script>
+  const TITLES = { en: "Thirteen Passengers", ru: "Тринадцать пассажиров" };
+
+  document.querySelectorAll("[data-tallies]").forEach((strip) => {
+    for (let i = 0; i < 33; i++) {
+      const mark = document.createElement("i");
+      mark.className = i < 23 ? "tally" : "tally miss";
+      strip.appendChild(mark);
+    }
+  });
+
+  function setLang(lang) {
+    document.querySelectorAll("[data-lang]").forEach((el) => {
+      el.classList.toggle("on", el.dataset.lang === lang);
+    });
+    document.querySelectorAll(".langbar button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.set === lang));
+    });
+    document.documentElement.lang = lang;
+    document.title = TITLES[lang];
+    try { localStorage.setItem("titanic-lang", lang); } catch (e) { /* приватный режим */ }
+  }
+
+  document.querySelectorAll(".langbar button").forEach((b) => {
+    b.addEventListener("click", () => setLang(b.dataset.set));
+  });
+
+  let start = "en";
+  try { start = localStorage.getItem("titanic-lang") || "en"; } catch (e) { /* приватный режим */ }
+  setLang(start);
+</script>

@@ -41,6 +41,11 @@ One lock file covers both, so they cannot drift apart on a shared dependency.
 The model version has a single source of truth in `titanic_model/__init__.py` —
 hatch reads it, and the manifest and artifact filename use the same value.
 
+**A short read for non-specialists** — what the model buys, counted in passengers
+rather than percentages — lives in [`docs/index.html`](docs/index.html), served at
+[voffkal.github.io/titanic-mlops](https://voffkal.github.io/titanic-mlops).
+English by default, Russian behind a switch.
+
 ---
 
 ## Evaluation protocol
