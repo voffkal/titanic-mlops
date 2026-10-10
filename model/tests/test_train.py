@@ -9,6 +9,7 @@ import pytest
 
 from titanic_model import __version__
 from titanic_model.data import load_train
+from titanic_model.integrity import file_sha256
 from titanic_model.train import (
     MIN_CV_ACCURACY,
     PROJECT_ROOT,
@@ -102,6 +103,12 @@ class TestTrainRun:
         on_disk = json.loads((artifacts / "metrics.json").read_text())
         assert on_disk["metrics"] == manifest["metrics"]
         assert on_disk["model_version"] == __version__
+
+    def test_manifest_records_the_hash_of_what_it_wrote(self, run):
+        manifest, artifacts, _ = run
+        record = manifest["artifact"]
+        assert record["file"] == f"titanic_model-{__version__}.joblib"
+        assert record["sha256"] == file_sha256(artifacts / record["file"])
 
     def test_manifest_records_the_protocol_and_the_data(self, run):
         manifest, _, _ = run

@@ -11,9 +11,10 @@ import numpy as np
 import pandas as pd
 
 from . import __version__
+from .integrity import verify_artifact
 from .train import DEFAULT_ARTIFACTS_DIR
 
-__all__ = ["REQUIRED_COLUMNS", "coerce_to_schema", "load_schema", "make_prediction"]
+__all__ = ["REQUIRED_COLUMNS", "coerce_to_schema", "load_model", "load_schema", "make_prediction"]
 
 #: No imputer downstream, except ``name``, which is a policy choice. See README.
 REQUIRED_COLUMNS = ("pclass", "name", "sex", "sibsp", "parch")
@@ -22,10 +23,18 @@ REQUIRED_COLUMNS = ("pclass", "name", "sex", "sibsp", "parch")
 @lru_cache(maxsize=2)
 def _load(artifacts_dir: str) -> tuple[object, dict[str, str]]:
     d = Path(artifacts_dir)
-    # a joblib artifact is a pickle and load() executes code: our own artifacts only
-    model = joblib.load(d / f"titanic_model-{__version__}.joblib")
+    # a joblib artifact is a pickle and load() executes code: our own artifacts only,
+    # and their bytes are checked against the manifest's sha256 before load() runs
+    model_path = d / f"titanic_model-{__version__}.joblib"
+    verify_artifact(model_path, json.loads((d / "metrics.json").read_text()))
+    model = joblib.load(model_path)
     schema: dict[str, str] = json.loads((d / "input_schema.json").read_text())
     return model, schema
+
+
+def load_model(artifacts_dir: str | Path | None = None) -> object:
+    """The verified pipeline, from the same cache that serves predictions."""
+    return _load(str(artifacts_dir or DEFAULT_ARTIFACTS_DIR))[0]
 
 
 def load_schema(artifacts_dir: str | Path | None = None) -> dict[str, str]:

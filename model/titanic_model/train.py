@@ -42,6 +42,7 @@ from sklearn.model_selection import (
 from . import __version__
 from .builders import MODELS, STACK_MEMBERS, build, build_stack
 from .data import DEFAULT_RAW_DIR, load_test, load_train, write_submission
+from .integrity import artifact_record
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ARTIFACTS_DIR = PROJECT_ROOT / "model_artifacts"
@@ -200,6 +201,8 @@ def train(
     print("[4/4] writing artifacts...", flush=True)
     model_path = artifacts_dir / f"titanic_model-{__version__}.joblib"
     joblib.dump(estimator, model_path)
+    # predict.py checks this sha256 before joblib.load (see integrity.py)
+    manifest["artifact"] = artifact_record(model_path)
     (artifacts_dir / "metrics.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
     )

@@ -19,7 +19,7 @@ import spaces
 
 from titanic_model import __version__
 from titanic_model.features import TitleFeature
-from titanic_model.predict import make_prediction
+from titanic_model.predict import load_model, make_prediction
 
 RELEASE = f"https://github.com/voffkal/titanic-mlops/releases/download/model-v{__version__}"
 ARTIFACTS = Path(os.environ.get("ARTIFACTS_DIR", "/tmp/titanic-artifacts"))
@@ -84,9 +84,8 @@ def check_versions() -> None:
 @lru_cache(maxsize=1)
 def group_lookup():
     """The fitted GroupSurvival out of the artifact, loaded once rather than per call."""
-    import joblib
-
-    model = joblib.load(ARTIFACTS / f"titanic_model-{__version__}.joblib")
+    # through the package, not joblib.load: the sha256 check happens there
+    model = load_model(ARTIFACTS)
     return model.estimators_[0].named_steps["group_feats"]
 
 

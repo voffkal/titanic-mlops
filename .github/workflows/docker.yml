@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  attestations: read
   packages: write
 
 jobs:
@@ -27,6 +28,20 @@ jobs:
           # input_schema.json are tracked — and the release overwrites both
           mkdir -p model_artifacts
           gh release download "$TAG" -D model_artifacts --clobber
+
+      # Before the image is built: the file matches its manifest and came out of
+      # our release-model run. Releases cut before the check have no
+      # artifact.sha256 and fail here — cut a new model release.
+      - name: Verify the model artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: model_artifacts
+        run: |
+          MODEL=$(jq -r '.artifact.file // empty' metrics.json)
+          SHA=$(jq -r '.artifact.sha256 // empty' metrics.json)
+          test -n "$MODEL" && test -n "$SHA" || { echo "::error::metrics.json has no artifact.sha256"; exit 1; }
+          echo "$SHA  $MODEL" | sha256sum -c -
+          gh attestation verify "$MODEL" --repo "$GITHUB_REPOSITORY"
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3

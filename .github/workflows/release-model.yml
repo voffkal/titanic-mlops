@@ -6,6 +6,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write      # signs the attestation through Sigstore
+  attestations: write
 
 jobs:
   train-and-release:
@@ -51,6 +53,14 @@ jobs:
       # in 418, so a submission produced locally would score a different model.
       - name: Train the release artifact
         run: uv run titanic-train --submission
+
+      # A signed statement that this .joblib was built by this workflow from this
+      # commit. The sha256 in metrics.json ships next to the file and can be swapped
+      # with it; the attestation cannot be forged without running our workflow.
+      - name: Attest the artifact
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: model_artifacts/titanic_model-*.joblib
 
       - name: Publish the release
         env:
