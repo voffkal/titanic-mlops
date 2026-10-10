@@ -13,6 +13,10 @@ API changes appear under the release they shipped with. `api-v0.1.0` covers
 everything the service has done so far, since it had not been released before.
 Push `model-v*` first — `docker.yml` builds against the newest model release.
 
+## [0.2.1] — проверка sha256
+- Считывает sha256 файла joblib и сохраняет в metrics.json
+- predict._load сверяет перед joblib.load, несовпадение - загрузка отклоняется
+
 ## [0.2.0] — companions
 
 **Leaderboard 0.79665**, 333 of 418. CV accuracy 0.8465 ±0.0184, roc_auc 0.8863.
