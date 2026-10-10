@@ -5,7 +5,7 @@
 
 # The model package is installed straight from the tag its artifact was released
 # from, so __version__ matches the joblib filename app.py downloads.
-titanic-model @ git+https://github.com/voffkal/titanic-mlops.git@model-v0.2.0#subdirectory=model
+titanic-model @ git+https://github.com/voffkal/titanic-mlops.git@model-v0.2.1#subdirectory=model
 # gradio 5 caps pandas at <3.0 while the artifact was pickled under 3.0.5;
 # gradio 6 allows <4.0. sdk_version in README.md must match this.
 gradio>=6.0
